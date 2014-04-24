@@ -1,0 +1,26 @@
+# Targets
+
+OBJS = Fasta_reader.o sequenceUtil.o stacktrace.o Fasta_entry.o string_util.o mrSubroutine.o IRKE.o KmerCounter.o
+
+OBJS_main = mr_inchworm.o
+
+EXECUTABLE = mr_inchworm
+
+all:	mr_inchworm
+
+mr_inchworm:	$(OBJS) $(OBJS_main) $(USRLIB)
+	$(LINK) $(LINKFLAGS) $(OBJS) $(OBJS_main) $(USRLIB) $(SYSLIB) -o $(EXECUTABLE) 
+
+clean:
+	rm $(OBJS) $(OBJS_main) $(EXECUTABLE)
+
+clean_obj:
+	rm $(OBJS) $(OBJS_main)
+
+# Rules
+
+%.o:%.cpp
+	$(CPP) $(CCFLAGS) -c $<
+
+%.o:%.c
+	$(CC) $(CCFLAGS) -c $<

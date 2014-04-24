@@ -1,0 +1,56 @@
+mpic++  -pedantic -m64 -g -O3 -fopenmp -Wall -Wextra -Wno-long-long -Wno-deprecated -I/gpfs/home/HCP016/mdw03/cxk42-mdw03/LIBs/mrmpi-22Nov13/src -c sequenceUtil.cpp
+mpic++  -pedantic -m64 -g -O3 -fopenmp -Wall -Wextra -Wno-long-long -Wno-deprecated -I/gpfs/home/HCP016/mdw03/cxk42-mdw03/LIBs/mrmpi-22Nov13/src -c KmerCounter.cpp
+sequenceUtil.cpp: In function 'bool contains_non_gatc(std::string)':
+sequenceUtil.cpp:35: warning: array subscript has type 'char'
+sequenceUtil.cpp: In function 'kmer_int_type_t kmer_to_intval(std::string)':
+sequenceUtil.cpp:260: warning: array subscript has type 'char'
+sequenceUtil.cpp: In function 'std::string replace_nonGATC_chars_with_A(std::string&)':
+sequenceUtil.cpp:417: warning: array subscript has type 'char'
+KmerCounter.cpp: In member function 'void KmerCounter::dump_kmers_to_file(std::string&)':
+KmerCounter.cpp:213: warning: unused variable 'count'
+mpic++ -pedantic -m64 -g -O3 -fopenmp -Wall -Wextra -Wno-long-long -Wno-deprecated  Fasta_reader.o sequenceUtil.o stacktrace.o Fasta_entry.o string_util.o mrSubroutine.o IRKE.o KmerCounter.o mr_inchworm.o /gpfs/home/HCP016/mdw03/cxk42-mdw03/LIBs/mrmpi-22Nov13/src/libmrmpi_mpicc.a  -o mr_inchworm 
+mrSubroutine.o: In function `__adjust_heap<__gnu_cxx::__normal_iterator<std::pair<long long unsigned int, unsigned int>*, std::vector<std::pair<long long unsigned int, unsigned int>, std::allocator<std::pair<long long unsigned int, unsigned int> > > >, long int, std::pair<long long unsigned int, unsigned int>, bool (*)(const Kmer_Occurence_Pair&, const Kmer_Occurence_Pair&)>':
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/../../../../include/c++/4.4.6/bits/stl_heap.h:303: undefined reference to `Sort_kmer_by_count_desc(std::pair<unsigned long long, unsigned int> const&, std::pair<unsigned long long, unsigned int> const&)'
+mrSubroutine.o: In function `__push_heap<__gnu_cxx::__normal_iterator<std::pair<long long unsigned int, unsigned int>*, std::vector<std::pair<long long unsigned int, unsigned int>, std::allocator<std::pair<long long unsigned int, unsigned int> > > >, long int, std::pair<long long unsigned int, unsigned int>, bool (*)(const Kmer_Occurence_Pair&, const Kmer_Occurence_Pair&)>':
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/../../../../include/c++/4.4.6/bits/stl_heap.h:180: undefined reference to `Sort_kmer_by_count_desc(std::pair<unsigned long long, unsigned int> const&, std::pair<unsigned long long, unsigned int> const&)'
+mrSubroutine.o: In function `__median<std::pair<long long unsigned int, unsigned int>, bool (*)(const Kmer_Occurence_Pair&, const Kmer_Occurence_Pair&)>':
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/../../../../include/c++/4.4.6/bits/stl_algo.h:124: undefined reference to `Sort_kmer_by_count_desc(std::pair<unsigned long long, unsigned int> const&, std::pair<unsigned long long, unsigned int> const&)'
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/../../../../include/c++/4.4.6/bits/stl_algo.h:125: undefined reference to `Sort_kmer_by_count_desc(std::pair<unsigned long long, unsigned int> const&, std::pair<unsigned long long, unsigned int> const&)'
+mrSubroutine.o: In function `__unguarded_partition<__gnu_cxx::__normal_iterator<std::pair<long long unsigned int, unsigned int>*, std::vector<std::pair<long long unsigned int, unsigned int>, std::allocator<std::pair<long long unsigned int, unsigned int> > > >, std::pair<long long unsigned int, unsigned int>, bool (*)(const Kmer_Occurence_Pair&, const Kmer_Occurence_Pair&)>':
+/usr/lib/gcc/x86_64-redhat-linux/4.4.6/../../../../include/c++/4.4.6/bits/stl_algo.h:2230: undefined reference to `Sort_kmer_by_count_desc(std::pair<unsigned long long, unsigned int> const&, std::pair<unsigned long long, unsigned int> const&)'
+mrSubroutine.o:/usr/lib/gcc/x86_64-redhat-linux/4.4.6/../../../../include/c++/4.4.6/bits/stl_algo.h:2233: more undefined references to `Sort_kmer_by_count_desc(std::pair<unsigned long long, unsigned int> const&, std::pair<unsigned long long, unsigned int> const&)' follow
+IRKE.o: In function `IRKE::traverse_path(KmerCounter&, std::pair<unsigned long long, unsigned int>, Kmer_visitor&, Kmer_visitor&, float, unsigned int)':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:310: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:318: undefined reference to `IRKE_COMMON::MONITOR'
+IRKE.o: In function `IRKE::inchworm_step(KmerCounter&, char, std::pair<unsigned long long, unsigned int>, Kmer_visitor&, Kmer_visitor&, unsigned int, unsigned int, float, unsigned int)':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:746: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:763: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:792: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:836: undefined reference to `IRKE_COMMON::__DEVEL_no_greedy_extend'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:836: undefined reference to `IRKE_COMMON::__DEVEL_no_greedy_extend'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:841: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:856: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:866: undefined reference to `IRKE_COMMON::__DEVEL_no_tie_breaking'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:871: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:896: undefined reference to `IRKE_COMMON::MONITOR'
+IRKE.o: In function `IRKE::inchworm(KmerCounter&, char, unsigned long long, Kmer_visitor&, float)':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:645: undefined reference to `IRKE_COMMON::__DEVEL_rand_fracture'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:652: undefined reference to `IRKE_COMMON::__DEVEL_rand_fracture_prob'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:667: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:682: undefined reference to `IRKE_COMMON::__DEVEL_zero_kmer_on_use'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:703: undefined reference to `IRKE_COMMON::__DEVEL_zero_kmer_on_use'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:720: undefined reference to `IRKE_COMMON::MONITOR'
+IRKE.o: In function `_ZN4IRKE25populate_Kmers_from_kmersERKSs.omp_fn.1':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:99: undefined reference to `IRKE_COMMON::MONITOR'
+IRKE.o: In function `_ZN4IRKE25populate_Kmers_from_fastaERKSsb.omp_fn.0':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:174: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:221: undefined reference to `IRKE_COMMON::MONITOR'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:243: undefined reference to `IRKE_COMMON::MONITOR'
+IRKE.o:/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:466: more undefined references to `IRKE_COMMON::MONITOR' follow
+IRKE.o: In function `IRKE::compute_sequence_assemblies(KmerCounter&, float, unsigned int, unsigned int, bool, std::basic_string<char, std::char_traits<char>, std::allocator<char> >)':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:580: undefined reference to `IRKE_COMMON::__DEVEL_zero_kmer_on_use'
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/IRKE.cpp:502: undefined reference to `IRKE_COMMON::MONITOR'
+KmerCounter.o: In function `KmerCounter::get_kmers_sort_descending_counts()':
+/gpfs/home/HCP016/mdw03/cxk42-mdw03/Run_Trinity/MR_Inchworm/src_mrInchworm/KmerCounter.cpp:618: undefined reference to `IRKE_COMMON::__DEVEL_no_kmer_sort'
+collect2: ld returned 1 exit status
+make: *** [mr_inchworm] Error 1
