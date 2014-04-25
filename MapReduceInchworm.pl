@@ -18,6 +18,8 @@ my $CPU = 1;
 my $IWORM_KMER_SIZE = 25;
 my $MIN_IWORM_LEN = 25;
 
+my $long_reads = "";
+
 my $INCHWORM_CUSTOM_PARAMS;
 
 # option list:
@@ -65,15 +67,18 @@ _EOUSAGE_
 
 ;
 
-my $ROOTDIR = "$FindBin::RealBin";
-my $MR_INCHWORM_DIR = "$ROOTDIR/MR_Inchworm";
+my $ROOTDIR            = "$FindBin::RealBin";
+my $MR_INCHWORM_DIR    = "$ROOTDIR/MR_Inchworm";
 my $FASTA_SPLITTER_DIR = "$ROOTDIR/Fasta_Splitter";
+my $FASTOOL_DIR        = "$ROOTDIR/fastool";
+my $UTILDIR            = "$ROOTDIR/util"; 
 
-my $FASTOOL_DIR = "$ROOTDIR/fastool";
+unless (@ARGV) {
+    die "$usage\n";
+}
 
-#unless (@ARGV) {
-#    die "$usage\n";
-#}
+
+my $NO_FASTOOL = 0;
 
 &GetOptions( 
 
@@ -84,6 +89,8 @@ my $FASTOOL_DIR = "$ROOTDIR/fastool";
     
     "SS_lib_type=s" => \$SS_lib_type,
 
+    "long_reads=s" => \$long_reads,
+
     "output=s" => \$output_directory,
     
     "min_contig_length=i" => \$min_contig_length,
@@ -92,6 +99,8 @@ my $FASTOOL_DIR = "$ROOTDIR/fastool";
 
     'min_kmer_cov=i'        => \$min_kmer_cov,
     'INCHWORM_CUSTOM_PARAMS=s' => \$INCHWORM_CUSTOM_PARAMS,
+
+    'no_fastool' => \$NO_FASTOOL,
 
     'KMER_SIZE=i' => \$IWORM_KMER_SIZE,
 
@@ -118,17 +127,144 @@ if ($SS_lib_type) {
     }
 }
 
+my $USE_FASTOOL = 1;
+if ($NO_FASTOOL) {
+    $USE_FASTOOL = 0;
+}
+
+unless ( (@left_files && @right_files) || @single_files ) {
+    die "Error, need either options 'left' and 'right' or option 'single'\n";
+}
+
+
+my $curr_limit_settings = `/bin/sh -c 'ulimit -a' `; 
+unless ($curr_limit_settings && $curr_limit_settings =~ /\w/) {
+    $curr_limit_settings = `/bin/csh -c limit`; # backup, probably not needed.
+}
+
+print "Current settings:\n$curr_limit_settings\n\n";
+
+
+
+my $MKDIR_OUTDIR_FLAG = 0;
+##################################################################################
+#
+
 main: {
 
+    @left_files = &create_full_path(\@left_files) if @left_files;
+    @right_files = &create_full_path(\@right_files) if @right_files;
+    @single_files = &create_full_path(\@single_files) if @single_files;
+    $output_directory = &create_full_path($output_directory);
+    $long_reads = &create_full_path($long_reads) if $long_reads;
 
+    unless (-d $output_directory) {
+        &process_cmd("mkdir -p $output_directory");
+        $MKDIR_OUTDIR_FLAG = 1;
+    }
+
+    chdir ($output_directory) or die "Error, cannot cd to $output_directory"; 
+
+    ## create inchworm file name
+    my $inchworm_file = "inchworm.K$IWORM_KMER_SIZE.L$MIN_IWORM_LEN";
+    unless ($SS_lib_type) {
+        $inchworm_file .= ".DS";
+    }
+    $inchworm_file .= ".fa";
+    $inchworm_file = &create_full_path($inchworm_file);
+
+    my $trinity_target_fa = (@single_files) ? "single.fa" : "both.fa"; 
+    my $inchworm_target_fa = $trinity_target_fa; 
+
+    ## Don't prep the inputs if Inchworm already exists.... Resuming earlier operations.
+    my $inchworm_finished_checkpoint_file = "$inchworm_file.finished";
+    if (-s $inchworm_file && -e $inchworm_finished_checkpoint_file) {
+        print "\n\n#######################################################################\n"
+            . "Inchworm file: $inchworm_file detected.\n"
+            . "Skipping Inchworm Step, Using Previous Inchworm Assembly\n"
+            . "#######################################################################\n\n";
+        sleep(2);
+    }
+    else {
+
+	## Prep data for Inchworm
+	if (@left_files && @right_files) {
+
+            unless (-s $trinity_target_fa && !-e "left.fa" && !-e "right.fa") {
+                
+                my ($left_SS_type, $right_SS_type);
+                if ($SS_lib_type) {
+                    ($left_SS_type, $right_SS_type) = split(//, $SS_lib_type);
+                }
+                print("Converting input files. (in parallel)");
+                my $thr1;
+                my $thr2;
+                if (!(-s "left.fa")) {
+                    $thr1 = threads->create('prep_seqs', \@left_files, $seqType, "left", $left_SS_type);
+                } else {
+                    $thr1 = threads->create(sub { print ("left file exists, nothing to do");});
+                }
+                if (!(-s "right.fa")) {
+                    $thr2 = threads->create('prep_seqs', \@right_files, $seqType, "right", $right_SS_type);
+                } else {
+                    $thr2 = threads->create(sub { print ("right file exists, nothing to do");});
+                }
+                @left_files = @{$thr1->join()};
+                @right_files =@{$thr2->join()};
+                print("Done converting input files.");
+		## Calculate input file sizes for performance monitoring
+		## this should be set as the created fasta otherwise results will differ for same data passed as .fq and .fa?
+		my $pm_temp = -s "left.fa";
+                $pm_temp = $pm_temp / 1024 / 1024;
+                my $pm_left_fa_size = sprintf('%.0f', $pm_temp);
+                $pm_temp = -s "right.fa";
+                $pm_temp = $pm_temp / 1024 / 1024;
+                my $pm_right_fa_size = sprintf('%.0f', $pm_temp);
+                
+                &process_cmd("cat left.fa right.fa > $trinity_target_fa") unless (-s $trinity_target_fa && (-s $trinity_target_fa == ((-s "left.fa") + (-s "right.fa"))));
+                unless (-s $trinity_target_fa == ((-s "left.fa") + (-s "right.fa"))){
+                    die "$trinity_target_fa is smaller (".(-s $trinity_target_fa)." bytes) than the combined size of left.fa and right.fa (".((-s "left.fa") + (-s "right.fa"))." bytes)\n";
+                }
+
+		# we keep if we have jaccard; delete later
+		unlink ("left.fa", "right.fa"); # unless $jaccard_clip; # no longer needed now that we have 'both.fa', which is needed by chryaslis
+            }
+        }
+	elsif (@single_files) {
+            
+            @single_files = @{&prep_seqs(\@single_files, $seqType, "single", $SS_lib_type) unless (-s "single.fa")};
+	    ## Calculate input file sizes for performance monitoring
+	    my $pm_temp = -s "single.fa";
+            $pm_temp = $pm_temp / 1024 / 1024;
+            my $pm_single_fa_size = sprintf('%.0f', $pm_temp);
+        }
+        
+        else {
+            die "not sure what to do. "; # should never get here.
+        }
+
+	my $count_of_reads = `wc -l < $inchworm_target_fa`;chomp($count_of_reads); #AP: grep is  expensive; one test took 2h...!
+        $count_of_reads/=2;
+
+        if ($long_reads) {
+            $inchworm_target_fa .= ".wLongReads.fa";
+            $count_of_reads += `grep -c '^>' $long_reads | wc -l`; #AP we don't know if these will be one single line
+            &process_cmd("cat $long_reads $trinity_target_fa > $inchworm_target_fa");
+        }
+            
+        open (my $ofh, ">$inchworm_target_fa.read_count") or die $!;
+        print $ofh $count_of_reads."\n";
+        close $ofh;
+    }
+
+		
 
 exit(0);
 
 }
 
+#####################################################################################
 
-
-####
 sub create_full_path {
     my ($file) = shift;
     if (ref($file) eq "ARRAY"){
@@ -144,4 +280,95 @@ sub create_full_path {
       return($file);
     }
 }
+
+###
+sub process_cmd {
+    my ($cmd) = @_;
+
+    print "CMD: $cmd\n";
+
+    my $start_time = time();
+    my $ret = system($cmd);
+    my $end_time = time();
+
+    if ($ret) {
+        die "Error, cmd: $cmd died with ret $ret";
+    }
+    
+    print "CMD finished (" . ($end_time - $start_time) . " seconds)\n";    
+
+    return;
+}
+
+###
+sub prep_seqs {
+    my ($initial_files_ref, $seqType, $file_prefix, $SS_lib_type) = @_;
+    my @initial_files = @$initial_files_ref;
+    return if -e "$file_prefix.fa";
+
+        for (my $i=0;$i<scalar(@initial_files);$i++){
+         my $f = $initial_files[$i];
+         if ($f=~/\.gz$/){
+          my $new = $f;
+          $new=~s/\.gz$//;
+          unlink($new);
+          &process_cmd("gunzip -c $f > $new");
+          $initial_files[$i] = $new;
+         }elsif ($f=~/\.bz2$/){
+          my $new = $f;
+          $new=~s/\.bz2$//;
+          unlink($new);
+          &process_cmd("bunzip2 -dkc $f > $new");
+          $initial_files[$i] = $new;
+         }
+        }
+
+        my $initial_file_str = join(" ",@initial_files);
+    if ($seqType eq "fq") {
+       # make fasta
+       foreach my $f (@initial_files){
+         my $perlcmd = "$UTILDIR/fastQ_to_fastA.pl -I $f ";
+         my $fastool_cmd = "$FASTOOL_DIR/fastool";
+         if ($SS_lib_type && $SS_lib_type eq "R") {
+             $perlcmd .= " --rev ";
+             $fastool_cmd .= " --rev ";
+         }
+         $fastool_cmd .= " --illumina-trinity --to-fasta $f >> $file_prefix.fa";
+         $perlcmd .= " >> $file_prefix.fa";
+         my $cmd = ($USE_FASTOOL) ? $fastool_cmd : $perlcmd;
+         &process_cmd($cmd);
+        }
+    }
+    elsif ($seqType eq "fa") {
+        if (scalar(@initial_files) == 1 && (!$SS_lib_type || $SS_lib_type ne "R")) {
+            ## just symlink it here:
+            my $cmd = "ln -s $initial_file_str $file_prefix.fa";
+            &process_cmd($cmd);
+        }elsif(scalar(@initial_files) > 1 && (!$SS_lib_type || $SS_lib_type ne "R")){
+                my $cmd = "cat $initial_file_str > $file_prefix.fa";
+                &process_cmd($cmd);
+        }else {
+          #if ($SS_lib_type && $SS_lib_type eq "R") {
+                  foreach my $f (@initial_files){
+                my $cmd = "$UTILDIR/revcomp_fasta.pl $f >> $file_prefix.fa";
+                &process_cmd($cmd);
+                }
+        }
+    }
+    elsif (($seqType eq "cfa") | ($seqType eq "cfq")) {
+        # make double-encoded fasta
+        foreach my $f (@initial_files){
+         my $cmd = "$UTILDIR/csfastX_to_defastA.pl -I $f ";
+         if ($SS_lib_type && $SS_lib_type eq "R") {
+             $cmd .= " --rev ";
+         }
+         $cmd .= ">> $file_prefix.fa";
+         &process_cmd($cmd);
+        }
+  }
+  return \@initial_files;
+}
+
+
+
 
