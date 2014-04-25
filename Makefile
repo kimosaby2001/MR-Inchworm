@@ -6,7 +6,7 @@
 # to build MR-Inchworm and Fasta_Splitter 
 # 
 
-TARGETS=mr_inchworm fasta_splitter fastool
+TARGETS=mr_inchworm fasta_splitter fasta_tool
 
 all: ${TARGETS}
 
@@ -16,7 +16,7 @@ mr_inchworm:
 fasta_splitter:
 	cd Fasta_Splitter && $(MAKE)
 
-fastool:
+fasta_tool:
 	cd fastool && $(MAKE)
 
 clean:

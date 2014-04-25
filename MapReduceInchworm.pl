@@ -69,7 +69,7 @@ my $ROOTDIR = "$FindBin::RealBin";
 my $MR_INCHWORM_DIR = "$ROOTDIR/MR_Inchworm";
 my $FASTA_SPLITTER_DIR = "$ROOTDIR/Fasta_Splitter";
 
-my $FASTOOL_DIR = "$ROOTDIR/trinity-plugins/fastool";
+my $FASTOOL_DIR = "$ROOTDIR/fastool";
 
 #unless (@ARGV) {
 #    die "$usage\n";
