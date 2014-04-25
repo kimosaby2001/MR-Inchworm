@@ -64,8 +64,8 @@ int main(int narg, char **args)
 
   data.prune_error_kmers = true;
   data.min_ratio_non_error = 0.05f;
-  data.min_kmer_count = 1;
-  data.min_edge_count = 1;
+  data.min_kmer_count = 2;
+  data.min_edge_count = 2;
   data.min_any_entropy = 0.0;
   data.kmer_length = 25;
   data.DS = false;

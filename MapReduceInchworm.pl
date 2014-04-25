@@ -52,8 +52,8 @@ my $min_percent_read_iworm_kmers = -1;
 
 ## Performance monitoring options 
 my $pm_logfile = "MR_Inchworm.timing";
-my $pm_inchworm_start=0;
-my $pm_inchworm_end=0;
+my $pm_mrInchworm_start=0;
+my $pm_mrInchworm_end=0;
 my $pm_left_fa_size=0;
 my $pm_right_fa_size=0;
 my $pm_single_fa_size=0;
@@ -271,7 +271,23 @@ main: {
         close $ofh;
     }
 
-		
+
+    ##############################################
+    # MR-Inchworm
+    #
+    $pm_mrInchworm_start = `date +%s`;
+    unless (-s $inchworm_file && -e $inchworm_finished_checkpoint_file) {
+                    
+        &run_mrInchworm($inchworm_file, $inchworm_target_fa, $SS_lib_type);
+
+        #&process_cmd("touch $inchworm_finished_checkpoint_file");
+    }
+    $pm_mrInchworm_end = `date +%s`;
+
+    my $pm_mrInchworm_time = $pm_mrInchworm_end - $pm_mrInchworm_start;
+    print "\n  mrInchworm took  $pm_mrInchworm_time seconds\n";
+
+   		
 
 exit(0);
 
@@ -279,6 +295,57 @@ exit(0);
 
 #####################################################################################
 
+sub run_mrInchworm {
+    my ($inchworm_outfile, $reads, $strand_specific_flag) = @_;
+
+    ## get count of number of reads to be assembled.
+    my $read_count_file = "$reads.read_count";
+    if (! -s $read_count_file) {
+        my $count_of_reads = `wc -l < $reads`;chomp($count_of_reads); #AP: grep is  expensive; one test took 2h...! 
+        $count_of_reads/=2;  # assume fasta; two lines per read
+        $pm_read_count = $count_of_reads;
+        open (my $ofh, ">$read_count_file") or die $!;
+        print $ofh $count_of_reads."\n";
+        close $ofh;
+    }
+
+    my $inchworm_cmd;
+    
+    my @tmp_files; # to be deleted after successful inchworm run.
+
+    ######################################################
+    #   C-FastaSplitter
+    #################################################### 
+
+    my $reads_header = "$reads.header";
+    my $cmd_header = "grep -nr \">\" $reads | awk -F \":>\" '{print \$1}' > $reads_header"; 
+    &process_cmd($cmd_header);
+
+    my $sKmerDir = "sKmer_tmp";
+    if (-d $sKmerDir) {
+        &process_cmd("rm -r $sKmerDir");
+    }
+    &process_cmd("mkdir -p $sKmerDir");
+
+    my $cmd_splitter = "mpirun -mca mpi_warn_on_fork 0 -np $CPU $FASTA_SPLITTER_DIR/Fasta_Splitter -r $reads";
+    $cmd_splitter = $cmd_splitter . " -i $reads_header -o $sKmerDir";
+    &process_cmd($cmd_splitter);
+
+    ########################################################
+    # MR-Inchworm
+    #######################################################
+
+    my $cmd_mrInchworm = "mpirun -np $CPU $MR_INCHWORM_DIR/mr_inchworm $sKmerDir/*";
+    &process_cmd($cmd_mrInchworm);
+
+    ####
+    &process_cmd("rm $reads_header");
+    &proecss_cmd("rm -rf $sKmerDir");
+
+    return;
+}
+
+########
 sub create_full_path {
     my ($file) = shift;
     if (ref($file) eq "ARRAY"){
