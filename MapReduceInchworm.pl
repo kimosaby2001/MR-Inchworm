@@ -49,6 +49,20 @@ my $SE_path_reinforcement_distance = 25;
 my $min_kmer_cov = 1;
 my $min_percent_read_iworm_kmers = -1;
 
+
+## Performance monitoring options 
+my $pm_logfile = "MR_Inchworm.timing";
+my $pm_inchworm_start=0;
+my $pm_inchworm_end=0;
+my $pm_left_fa_size=0;
+my $pm_right_fa_size=0;
+my $pm_single_fa_size=0;
+my $pm_trinity_fa_size=0;
+my $pm_trinity_arguments="";
+my $pm_inchworm_kmers=0;
+my $pm_read_count=0;
+
+
 my $usage = <<_EOUSAGE_;
 
 ####################################################################
@@ -216,10 +230,10 @@ main: {
 		## this should be set as the created fasta otherwise results will differ for same data passed as .fq and .fa?
 		my $pm_temp = -s "left.fa";
                 $pm_temp = $pm_temp / 1024 / 1024;
-                my $pm_left_fa_size = sprintf('%.0f', $pm_temp);
+                $pm_left_fa_size = sprintf('%.0f', $pm_temp);
                 $pm_temp = -s "right.fa";
                 $pm_temp = $pm_temp / 1024 / 1024;
-                my $pm_right_fa_size = sprintf('%.0f', $pm_temp);
+                $pm_right_fa_size = sprintf('%.0f', $pm_temp);
                 
                 &process_cmd("cat left.fa right.fa > $trinity_target_fa") unless (-s $trinity_target_fa && (-s $trinity_target_fa == ((-s "left.fa") + (-s "right.fa"))));
                 unless (-s $trinity_target_fa == ((-s "left.fa") + (-s "right.fa"))){
