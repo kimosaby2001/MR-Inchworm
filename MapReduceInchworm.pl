@@ -335,12 +335,13 @@ sub run_mrInchworm {
     # MR-Inchworm
     #######################################################
 
-    my $cmd_mrInchworm = "mpirun -np $CPU $MR_INCHWORM_DIR/mr_inchworm $sKmerDir/*";
+    my $cmd_mrInchworm = "mpirun --mca btl self,openib -np $CPU $MR_INCHWORM_DIR/mr_inchworm $sKmerDir/*";
     &process_cmd($cmd_mrInchworm);
+    &process_cmd("$UTILDIR/combine_clustered_iworm.sh iworm $CPU $inchworm_outfile");
 
     ####
     &process_cmd("rm $reads_header");
-    &proecss_cmd("rm -rf $sKmerDir");
+    &process_cmd("rm -r $sKmerDir");
 
     return;
 }

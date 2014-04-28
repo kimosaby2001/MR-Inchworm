@@ -64,7 +64,7 @@ int main(int narg, char **args)
 
   data.prune_error_kmers = true;
   data.min_ratio_non_error = 0.05f;
-  data.min_kmer_count = 2;
+  data.min_kmer_count = 1;
   data.min_edge_count = 2;
   data.min_any_entropy = 0.0;
   data.kmer_length = 25;
@@ -156,17 +156,17 @@ int main(int narg, char **args)
   }
 
   tstart = MPI_Wtime();
-  data.forward_direction = true;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->add(mrKmers);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_count_to_edge, &data);
+//  data.forward_direction = true;
+//  mrE->map(mrE, map_kmer_edge, &data);
+//  mrE->add(mrKmers);
+//  mrE->collate(NULL);
+//  mrE->reduce(reduce_count_to_edge, &data);
 
-  data.forward_direction = false;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->add(mrKmers);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_count_to_edge, &data);
+//  data.forward_direction = false;
+//  mrE->map(mrE, map_kmer_edge, &data);
+//  mrE->add(mrKmers);
+//  mrE->collate(NULL);
+//  mrE->reduce(reduce_count_to_edge, &data);
 
 //  data.forward_direction = true;
 //  mrE->map(mrE, map_kmer_edge, &data);
