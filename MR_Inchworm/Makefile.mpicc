@@ -4,7 +4,7 @@ CC =		mpicc
 CPP =		mpic++ 
 CCFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated -I/gpfs/home/HCP016/mdw03/cxk42-mdw03/LIBs/mrmpi-22Nov13/src 
 LINK =		mpic++
-LINKFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated 
+LINKFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated  
 USRLIB =	/gpfs/home/HCP016/mdw03/cxk42-mdw03/LIBs/mrmpi-22Nov13/src/libmrmpi_mpicc.a
 SYSLIB =
 

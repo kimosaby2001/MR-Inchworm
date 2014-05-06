@@ -3,7 +3,7 @@ OBJS = Fasta_Splitter.o FileParser.o mutil.o StringUtil.o ErrorHandling.o
 EXECUTABLE = Fasta_Splitter
 
 CXX=mpic++
-CXXFLAG=-Wall -O2
+CXXFLAG=-Wall -O2 -enable-mpi-thread-multiple
 COMPILE=$(CXX) $(CXXFLAG) -c
 
 all: $(EXECUTABLE)

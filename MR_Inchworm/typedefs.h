@@ -29,7 +29,7 @@ typedef struct {
   } PAD;
 
 struct Data {
-        int n, ncluster;
+        int n;
 	uint64_t flag;
         unsigned int kmer_length;
         ofstream outFile;
@@ -38,8 +38,6 @@ struct Data {
         int seed,nthresh;
         int me,nprocs;
         PAD pad;
-
-	int num_threads;
 
         bool forward_direction;  //  forward = true, reverse = false
         float min_ratio_non_error;

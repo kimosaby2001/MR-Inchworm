@@ -9,6 +9,7 @@
 TARGETS=mr_inchworm fasta_splitter fasta_tool
 
 all: ${TARGETS}
+	sh install_tests.sh
 
 mr_inchworm:
 	cd MR_Inchworm && $(MAKE) -f Makefile.mpicc

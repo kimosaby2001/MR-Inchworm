@@ -1,0 +1,142 @@
+
+;; Function bool Fasta_reader::hasNext() (_ZN12Fasta_reader7hasNextEv)
+
+deleting insn with uid = 44.
+
+;; Function (static initializers for Fasta_reader.cpp) (_GLOBAL__I__ZN12Fasta_readerC2ESs)
+
+deleting insn with uid = 35.
+
+;; Function Fasta_entry::~Fasta_entry() (_ZN11Fasta_entryD2Ev)
+
+deleting insn with uid = 693.
+
+;; Function Fasta_reader::Fasta_reader(std::string) (_ZN12Fasta_readerC2ESs)
+
+deleting insn with uid = 1943.
+Failed to expand as dwarf: __str
+Reason: DECL has no RTL
+Failed to expand as dwarf: __str
+Reason: DECL has no RTL
+Failed to expand as dwarf: __a
+Reason: DECL has no RTL
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZTTSt14basic_ifstreamIcSt11char_traitsIcEE") [flags 0x40]  <var_decl 0x7f4875e7daa0 _ZTTSt14basic_ifstreamIcSt11char_traitsIcEE>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZTTSt14basic_ifstreamIcSt11char_traitsIcEE") [flags 0x40]  <var_decl 0x7f4875e7daa0 _ZTTSt14basic_ifstreamIcSt11char_traitsIcEE>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZTTSt14basic_ifstreamIcSt11char_traitsIcEE") [flags 0x40]  <var_decl 0x7f4875e7daa0 _ZTTSt14basic_ifstreamIcSt11char_traitsIcEE>)
+Reason: Symbol not defined in current TU.
+
+
+;; Function std::_Rb_tree_iterator<_Val> std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_insert_(const std::_Rb_tree_node_base*, const std::_Rb_tree_node_base*, const _Val&) [with _Key = std::basic_string<char, std::char_traits<char>, std::allocator<char> >, _Val = std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _KeyOfValue = std::_Select1st<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, _Compare = std::less<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _Alloc = std::allocator<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >] (_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_ESt4lessISsESaIS2_EE10_M_insert_EPKSt18_Rb_tree_node_baseSB_RKS2_)
+
+deleting insn with uid = 677.
+Failed to expand as dwarf: __insert_left
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+
+;; Function std::pair<typename std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::iterator, bool> std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_insert_unique(const _Val&) [with _Key = std::basic_string<char, std::char_traits<char>, std::allocator<char> >, _Val = std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _KeyOfValue = std::_Select1st<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, _Compare = std::less<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _Alloc = std::allocator<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >] (_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_ESt4lessISsESaIS2_EE16_M_insert_uniqueERKS2_)
+
+deleting insn with uid = 877.
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+
+;; Function std::_Rb_tree_iterator<_Val> std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_insert_unique_(std::_Rb_tree_const_iterator<_Val>, const _Val&) [with _Key = std::basic_string<char, std::char_traits<char>, std::allocator<char> >, _Val = std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _KeyOfValue = std::_Select1st<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, _Compare = std::less<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _Alloc = std::allocator<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >] (_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_ESt4lessISsESaIS2_EE17_M_insert_unique_ESt23_Rb_tree_const_iteratorIS2_ERKS2_)
+
+deleting insn with uid = 1235.
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+
+;; Function void std::_Rb_tree<_Key, _Val, _KeyOfValue, _Compare, _Alloc>::_M_erase(std::_Rb_tree_node<_Val>*) [with _Key = std::basic_string<char, std::char_traits<char>, std::allocator<char> >, _Val = std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _KeyOfValue = std::_Select1st<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, _Compare = std::less<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, _Alloc = std::allocator<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > >] (_ZNSt8_Rb_treeISsSt4pairIKSsSsESt10_Select1stIS2_ESt4lessISsESaIS2_EE8_M_eraseEPSt13_Rb_tree_nodeIS2_E)
+
+deleting insn with uid = 6729.
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+
+;; Function Fasta_entry Fasta_reader::getNext() (_ZN12Fasta_reader7getNextEv)
+
+deleting insn with uid = 5218.
+Failed to expand as dwarf: __a
+Reason: DECL has no RTL
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: __a
+Reason: DECL has no RTL
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("toupper") [flags 0x41]  <function_decl 0x7f4877846d00 toupper>)
+Reason: Symbol not defined in current TU.
+
+
+;; Function std::map<std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::less<std::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<const std::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::basic_string<char, std::char_traits<char>, std::allocator<char> > > > > Fasta_reader::retrieve_all_seqs_hash() (_ZN12Fasta_reader22retrieve_all_seqs_hashEv)
+
+deleting insn with uid = 3497.
+Failed to expand as dwarf: __i
+Reason: DECL has no RTL
+Failed to expand as dwarf: __a
+Reason: DECL has no RTL
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: 
+(symbol_ref:DI ("_ZNSs4_Rep20_S_empty_rep_storageE") [flags 0x40]  <var_decl 0x7f4876833280 _S_empty_rep_storage>)
+Reason: Symbol not defined in current TU.
+
+Failed to expand as dwarf: this
+Reason: DECL has no RTL
+Failed to expand as dwarf: this
+Reason: DECL has no RTL

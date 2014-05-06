@@ -22,23 +22,25 @@ void map_strip(uint64_t itask, char *key, int keybytes,
 
 // #####################################################################
 void reduce_zone_kmer_count(char *key, int keybytes,
-                            char *multivalue, uint64_t nvalues,
+                            char *multivalue, int nvalues,
                             int *valuebytes, KeyValue *kv, void *ptr)
 {
     int check = 0;
     Data *data = (Data *) ptr;
+    int i;
 
     char *value;
     uint64_t zone;
     KmerCount kmer_count;
     kmer_count.kmer = *(kmer_int_type_t *) key;
+    kmer_count.count=0;
 
     uint64_t nvalues_total;
     CHECK_FOR_BLOCKS(multivalue,valuebytes,nvalues,nvalues_total)
     BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
      value = multivalue;
-     for(int i=0; i<nvalues; i++) {
+     for(i=0; i<nvalues; i++) {
        if(valuebytes[i] == sizeof(uint64_t))
        {
 	 check++;
@@ -48,12 +50,8 @@ void reduce_zone_kmer_count(char *key, int keybytes,
        value += valuebytes[i];
      }
 
-    END_BLOCK_LOOP 
-
-    BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
-
      value = multivalue;
-     for(uint64_t i=0; i<nvalues; i++) {
+     for(i=0; i<nvalues; i++) {
        if(valuebytes[i] == sizeof(unsigned int))
        {
 	 check++;
@@ -65,9 +63,9 @@ void reduce_zone_kmer_count(char *key, int keybytes,
 
     END_BLOCK_LOOP
 
-    if(check == 2) {
+    if((check == 2) && (kmer_count.count > 0)) {
       data->flag++;
-      kv->add((char *) &zone, sizeof(uint64_t), (char *) &kmer_count, sizeof(KmerCount)+1);
+      kv->add((char *) &zone, sizeof(uint64_t), (char *) &kmer_count, sizeof(KmerCount));
     }
 
 }
@@ -75,7 +73,7 @@ void reduce_zone_kmer_count(char *key, int keybytes,
 // ##############################################################################
 
 void reduce_run_inchworm(char *key, int keybytes,
-                         char *multivalue, uint64_t nvalues,
+                         char *multivalue, int nvalues,
                          int *valuebytes, KeyValue *kv, void *ptr)
 {
  if(nvalues >= 0) {
@@ -83,7 +81,7 @@ void reduce_run_inchworm(char *key, int keybytes,
     IRKE irke(data->kmer_length, data->MAX_RECURSION, data->MIN_SEED_ENTROPY, data->MIN_SEED_COVERAGE,
               data->min_any_entropy, data->PACMAN, data->CRAWL, data->crawl_length, data->DS);
 
-    KmerCount *kmer_count;
+    KmerCount kmer_count;
 
     uint64_t zone = *(uint64_t *) key;
     char *value;
@@ -92,9 +90,9 @@ void reduce_run_inchworm(char *key, int keybytes,
     BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
     value = multivalue;
-    for(uint64_t i=0; i<nvalues; i++) {
-        kmer_count = (KmerCount *) value;
-        irke.add_kmer(kmer_count->kmer, kmer_count->count);
+    for(int i=0; i<nvalues; i++) {
+        kmer_count = *(KmerCount *) value;
+        irke.add_kmer(kmer_count.kmer, kmer_count.count);
         value += valuebytes[i];
     }
 
@@ -120,7 +118,7 @@ void reduce_run_inchworm(char *key, int keybytes,
 
 // ##############################################################################
 void reduce_print_clustered_kmers(char *key, int keybytes,
-                                  char *multivalue, uint64_t nvalues,
+                                  char *multivalue, int nvalues,
                                   int *valuebytes, KeyValue *kv, void *ptr)
 {
 //  if(nvalues >= 0) {
@@ -135,7 +133,7 @@ void reduce_print_clustered_kmers(char *key, int keybytes,
     BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
     value = multivalue;
-    for(uint64_t i=0; i<nvalues; i++) {
+    for(int i=0; i<nvalues; i++) {
         kmer_count = *(KmerCount *) value;
         string seq = decode_kmer_from_intval(kmer_count.kmer, data->kmer_length);
 
@@ -192,14 +190,14 @@ void map_zone_multi(uint64_t itask, char *key, int keybytes,
 
 // ###################################################################################
 void reduce_zone_reassign(char *key, int keybytes,
-                                  char *multivalue, uint64_t nvalues,
+                                  char *multivalue, int nvalues,
                                   int *valuebytes, KeyValue *kv, void *ptr)
 {
   Data *data = (Data *) ptr;
   int nthresh = data->nthresh;
   uint64_t lmask = data->lmask;
 
-  uint64_t i;
+  int i;
   int hnew;
   char *value;
   uint64_t znew;
@@ -250,7 +248,7 @@ void reduce_zone_reassign(char *key, int keybytes,
 
 // #########################################################################################
 void reduce_zone_winner(char *key, int keybytes,
-                        char *multivalue, uint64_t nvalues,
+                        char *multivalue, int nvalues,
                         int *valuebytes, KeyValue *kv, void *ptr)
 {
   uint64_t *z = (uint64_t *) multivalue;
@@ -289,10 +287,10 @@ void map_edge_vert(uint64_t itask, char *key, int keybytes,
 
 // ###########################################################################################
 void reduce_edge_zone(char *key, int keybytes,
-                      char *multivalue, uint64_t nvalues,
+                      char *multivalue, int nvalues,
                       int *valuebytes, KeyValue *kv, void *ptr)
 {
-  uint64_t i;
+  int i;
   char *value;
 
   uint64_t nvalues_total;
@@ -335,7 +333,7 @@ void edge_to_vertices(uint64_t itask, char *key, int keybytes, char *value,
 
 // ##############################################################################################
 void reduce_self_zone(char *key, int keybytes,
-                      char *multivalue, uint64_t nvalues,
+                      char *multivalue, int nvalues,
                       int *valuebytes, KeyValue *kv, void *ptr)
 {
   kv->add(key,keybytes,key,keybytes);
@@ -357,11 +355,12 @@ void output_edge(uint64_t itask, char *key, int keybytes, char *value,
 // #################################################################################################
 
 void reduce_filter_edge(char *key, int keybytes,
-                        char *multivalue, uint64_t nvalues,
+                        char *multivalue, int nvalues,
                         int *valuebytes, KeyValue *kv, void *ptr)
 {
   Data *data = (Data *) ptr;
   char *value;
+  int i;
   uint64_t nvalues_total;
   kmer_int_type_t kmer = *(kmer_int_type_t *) key;
  
@@ -372,7 +371,7 @@ void reduce_filter_edge(char *key, int keybytes,
   BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
   value = multivalue;
-  for (uint64_t i = 0; i < nvalues; i++) {
+  for (i = 0; i < nvalues; i++) {
 	EDGE edge = *(EDGE *) value;
 	if(data->forward_direction) {
 	    if(edge.cj > dominant_count) dominant_count = edge.cj;
@@ -387,7 +386,7 @@ void reduce_filter_edge(char *key, int keybytes,
   BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
   value = multivalue;
-  for (uint64_t i = 0; i < nvalues; i++) {
+  for (i = 0; i < nvalues; i++) {
 
 	EDGE edge = *(EDGE *) value;
 	if(data->forward_direction)
@@ -440,21 +439,104 @@ void map_kmer_edge (uint64_t itask, char *key, int keybytes,
    kv->add((char *) &kmer, sizeof(kmer_int_type_t), key, keybytes);
 }
 
-// #########################################################################################
+// ########################################################################################
 
-void reduce_count_to_edge(char *key, int keybytes,
-                          char *multivalue, uint64_t nvalues,
-                          int *valuebytes, KeyValue *kv, void *ptr)
+void reduce_filter_edge_by_count(char *key, int keybytes,
+                                 char *multivalue, int nvalues,
+                                 int *valuebytes, KeyValue *kv, void *ptr)
 {
    char *value;
    Data *data = (Data *) ptr;
+   EDGE edge;
 
    uint64_t nvalues_total;
    CHECK_FOR_BLOCKS(multivalue,valuebytes,nvalues,nvalues_total)
    BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
    value = multivalue;
-   for (uint64_t i=0; i<nvalues; i++) {
+   if(nvalues > 1) {
+     for (int i = 0; i < nvalues; i++) {
+       edge = *(EDGE *) value;
+       if(edge.ce >= data->min_edge_count) kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+       value += valuebytes[i]; 
+     }
+   } else {
+     edge = *(EDGE *) value;
+     kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+   }
+ 
+   END_BLOCK_LOOP
+
+}
+
+// ########################################################################################
+
+void reduce_keep_dominantEdge(char *key, int keybytes,
+                                 char *multivalue, int nvalues,
+                                 int *valuebytes, KeyValue *kv, void *ptr)
+{
+   char *value;
+   Data *data = (Data *) ptr;
+   EDGE edge;
+   int i;
+
+   uint64_t nvalues_total;
+
+   if(nvalues > 1) {
+
+    unsigned int dominant_count = 0;
+
+    CHECK_FOR_BLOCKS(multivalue,valuebytes,nvalues,nvalues_total)
+    BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
+
+    value = multivalue;
+    for (i = 0; i < nvalues; i++) {
+	edge = *(EDGE *) value;
+	if(edge.ce > dominant_count) dominant_count = edge.ce;
+	value += valuebytes[i];
+    }
+
+    value = multivalue;
+    for (i = 0; i < nvalues; i++) {
+        edge = *(EDGE *) value;
+	if(edge.ce == dominant_count) 
+	   kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+	value += valuebytes[i];
+    }
+
+    END_BLOCK_LOOP
+
+   } else {
+
+    CHECK_FOR_BLOCKS(multivalue,valuebytes,nvalues,nvalues_total)
+    BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
+
+    value = multivalue;
+    edge = *(EDGE *) value;
+    kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+
+    END_BLOCK_LOOP
+
+   }
+
+}
+
+// #########################################################################################
+
+void reduce_count_to_edge(char *key, int keybytes,
+                          char *multivalue, int nvalues,
+                          int *valuebytes, KeyValue *kv, void *ptr)
+{
+   char *value;
+   Data *data = (Data *) ptr;
+   int i;
+
+   uint64_t nvalues_total;
+   CHECK_FOR_BLOCKS(multivalue,valuebytes,nvalues,nvalues_total)
+   BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
+
+   value = multivalue;
+   for (i=0; i<nvalues; i++) {
         if(valuebytes[i] == sizeof(unsigned int)) break;
         value += valuebytes[i];
    }
@@ -466,7 +548,7 @@ void reduce_count_to_edge(char *key, int keybytes,
    BEGIN_BLOCK_LOOP(multivalue,valuebytes,nvalues)
 
    value = multivalue;
-   for (uint64_t i = 0; i < nvalues; i++) {
+   for (i = 0; i < nvalues; i++) {
         if(valuebytes[i] == sizeof(EDGE)) {
 	  EDGE edge = *(EDGE *) value;
    	  if(data->forward_direction) edge.ci = count;
@@ -569,7 +651,7 @@ void map_kmers_edge_vertex(uint64_t itask, char *key, int keybytes,
 // ###########################################################################################
 //
 void reduce_filter_nonExisting_edge(char *key, int keybytes,
-                                    char *multivalue, uint64_t nvalues,
+                                    char *multivalue, int nvalues,
                                     int *valuebytes, KeyValue *kv, void *ptr)
 {
   if(nvalues > 1) kv->add(key, keybytes, NULL, NULL);
@@ -579,10 +661,10 @@ void reduce_filter_nonExisting_edge(char *key, int keybytes,
 // #############################################################################################
 //
 void reduce_merge_kmers(char *key, int keybytes,
-                        char *multivalue, uint64_t nvalues,
+                        char *multivalue, int nvalues,
                         int *valuebytes, KeyValue *kv, void *ptr)
 {
-  uint64_t i;
+  int i;
   char *value;
   unsigned int count;
 
@@ -758,7 +840,7 @@ void map_output_kmers(uint64_t itask, char *key, int keybytes, char *value,
 // ########################################################################
 
 void reduce_kmers_RNAseq(char *key, int keybytes,
-                        char *multivalue, uint64_t nvalues,
+                        char *multivalue, int nvalues,
                         int *valuebytes, KeyValue *kv, void *ptr)
 {
   Data *data = (Data *) ptr;
@@ -774,14 +856,15 @@ void reduce_kmers_RNAseq(char *key, int keybytes,
 // #########################################################################
 
 void reduce_Edge_from_RNAseq(char *key, int keybytes,
-                            char *multivalue, uint64_t nvalues,
+                            char *multivalue, int nvalues,
                             int *valuebytes, KeyValue *kv, void *ptr)
 {
   Data *data = (Data *) ptr;
 
   EDGE edge = *(EDGE *) key;
-  edge.ce = nvalues;
+  edge.ce = (unsigned int)nvalues;
   kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+
 
 //  if(nvalues >= data->min_edge_count) 
 //     kv->add(key, keybytes,NULL,NULL);

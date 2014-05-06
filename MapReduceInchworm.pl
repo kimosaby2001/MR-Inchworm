@@ -15,6 +15,9 @@ use Getopt::Long qw(:config no_ignore_case pass_through);
 open (STDERR, ">&STDOUT"); 
 
 my $CPU = 1;
+my $MR_PAGE_SIZE = 1024;
+
+
 my $IWORM_KMER_SIZE = 25;
 my $MIN_IWORM_LEN = 25;
 
@@ -47,8 +50,8 @@ my $PE_path_reinforcement_distance = 75;
 my $SE_path_reinforcement_distance = 25;
 
 my $min_kmer_cov = 1;
+my $min_edge_cov = 1;
 my $min_percent_read_iworm_kmers = -1;
-
 
 ## Performance monitoring options 
 my $pm_logfile = "MR_Inchworm.timing";
@@ -112,14 +115,16 @@ my $NO_FASTOOL = 0;
     'CPU=i' => \$CPU,
 
     'min_kmer_cov=i'        => \$min_kmer_cov,
+    'min_edge_cov=i'        => \$min_edge_cov,
     'INCHWORM_CUSTOM_PARAMS=s' => \$INCHWORM_CUSTOM_PARAMS,
 
     'no_fastool' => \$NO_FASTOOL,
 
     'KMER_SIZE=i' => \$IWORM_KMER_SIZE,
 
-);
+    'page_size=i' => \$MR_PAGE_SIZE,
 
+);
 
 
 sub check_option {
@@ -271,16 +276,14 @@ main: {
         close $ofh;
     }
 
-
     ##############################################
     # MR-Inchworm
     #
+
     $pm_mrInchworm_start = `date +%s`;
     unless (-s $inchworm_file && -e $inchworm_finished_checkpoint_file) {
-                    
         &run_mrInchworm($inchworm_file, $inchworm_target_fa, $SS_lib_type);
-
-        #&process_cmd("touch $inchworm_finished_checkpoint_file");
+        &process_cmd("touch $inchworm_finished_checkpoint_file");
     }
     $pm_mrInchworm_end = `date +%s`;
 
@@ -335,7 +338,28 @@ sub run_mrInchworm {
     # MR-Inchworm
     #######################################################
 
-    my $cmd_mrInchworm = "mpirun --mca btl self,openib -np $CPU $MR_INCHWORM_DIR/mr_inchworm $sKmerDir/*";
+#    my $cmd_mrInchworm = "mpirun --mca btl self,openib -np $CPU $MR_INCHWORM_DIR/mr_inchworm -K $IWORM_KMER_SIZE -L $MIN_IWORM_LEN";
+    my $cmd_mrInchworm = "mpirun --mca orte_base_help_aggregate 0 -np $CPU $MR_INCHWORM_DIR/mr_inchworm -K $IWORM_KMER_SIZE -L $MIN_IWORM_LEN";
+    $cmd_mrInchworm .= " --PageSize $MR_PAGE_SIZE";
+
+    if ($min_kmer_cov > 1) {
+            $cmd_mrInchworm .= " --minKmerCount $min_kmer_cov";
+    } 
+
+    if ($min_edge_cov > 1) {
+            $cmd_mrInchworm .= " --minEdgeCount $min_edge_cov";
+    }
+   
+    unless ($strand_specific_flag) {
+        $cmd_mrInchworm .= " --DS ";
+    }
+
+    if ($INCHWORM_CUSTOM_PARAMS) {
+        $cmd_mrInchworm .= " $INCHWORM_CUSTOM_PARAMS";
+    } 
+
+    $cmd_mrInchworm .= " $sKmerDir"; 
+
     &process_cmd($cmd_mrInchworm);
     &process_cmd("$UTILDIR/combine_clustered_iworm.sh iworm $CPU $inchworm_outfile");
 
