@@ -435,6 +435,24 @@ void map_kmer_edge (uint64_t itask, char *key, int keybytes,
    kv->add((char *) &kmer, sizeof(kmer_int_type_t), key, keybytes);
 }
 
+void map_kmer_zoneKmer (uint64_t itask, char *key, int keybytes, char *value, int valuebytes,
+                         KeyValue *kv, void *ptr)
+{
+  kv->add(value, valuebytes, key, keybytes);
+}
+
+void reduce_zone2Edge (char *key, int keybytes,
+                       char *multivalue, int nvalues,
+                       int *valuebytes, KeyValue *kv, void *ptr)
+{
+  char *value;
+  Data *data = (Data *) ptr;
+  uint64_t zone; 
+  kmer_int_type_t kmer = *(kmer_int_type_t *) key;
+  
+
+}
+
 // ########################################################################################
 
 void reduce_filter_edge_by_count(char *key, int keybytes,
@@ -569,6 +587,9 @@ void map_kmers_edge_vertex(uint64_t itask, char *key, int keybytes,
 
   edge.ci = 0;
   edge.cj = 0;
+  edge.ce = 0;
+  edge.zi = 0;
+  edge.zj = 0;
 
   if(data->DS) {
 
@@ -743,13 +764,13 @@ void fileread_RNAseq(int itask, char *fname, KeyValue *kv, void *ptr)
         int nKmer = seq.length() - data->kmer_length + 1;
         for(int i=0; i<nKmer; i++) {
            string seq_kmer = seq.substr(i,data->kmer_length);
-           if( contains_non_gatc(seq) ) {  
-	      kmer_int_type_t kmer_val = kmer_to_intval(seq_kmer);
-              if(data->DS) kmer_val = get_DS_kmer_val(kmer_val, data->kmer_length);
+           kmer_int_type_t kmer_val = kmer_to_intval(seq_kmer);
 
-	      float entropy = compute_entropy(kmer_val, data->kmer_length);
-              if( entropy > data->min_any_entropy )
-                 kv->add((char *) &kmer_val,sizeof(kmer_int_type_t),(char *) &kmer_val,sizeof(kmer_int_type_t));
+           if(kmer_val >= 0) {
+                if(data->DS) kmer_val = get_DS_kmer_val(kmer_val, data->kmer_length);
+
+                if(kmer_val > max_kmer) kmer_val = max_kmer;
+                kv->add((char *) &kmer_val,sizeof(kmer_int_type_t),(char *) &kmer_val,sizeof(kmer_int_type_t));
            }
 
         }
@@ -780,6 +801,8 @@ void fileread_RNAseq_map_Edge(int itask, char *fname, KeyValue *kv, void *ptr)
   edge.ci = 0;
   edge.cj = 0;
   edge.ce = 0;
+  edge.zi = 0;
+  edge.zj = 0;
 
   while (true) {
 	Fasta_entry fe = fasta_reader.getNext();
@@ -788,26 +811,25 @@ void fileread_RNAseq_map_Edge(int itask, char *fname, KeyValue *kv, void *ptr)
 
 	int nKmer = seq.length() - data->kmer_length + 1;
         for(int i=0; i<(nKmer-1); i++) {
-	   string seq_kmer_i = seq.substr(i,data->kmer_length);
-	   string seq_kmer_j = seq.substr(i+1,data->kmer_length);
+	   string seq_kmer = seq.substr(i,data->kmer_length);
+           kmer_int_type_t kmer_val_i = kmer_to_intval(seq_kmer);
 
-	   if( contains_non_gatc(seq_kmer_i) && contains_non_gatc(seq_kmer_j) ) {
-	     kmer_int_type_t kmer_val_i = kmer_to_intval(seq_kmer_i);
-	     kmer_int_type_t kmer_val_j = kmer_to_intval(seq_kmer_j);	
+	   seq_kmer = seq.substr(i+1,data->kmer_length);
+	   kmer_int_type_t kmer_val_j = kmer_to_intval(seq_kmer);	
 
+	   if( (kmer_val_i >= 0) &&(kmer_val_j >= 0) ) {
 		if(data->DS) {
 		   kmer_val_i =  get_DS_kmer_val(kmer_val_i, data->kmer_length); 
 		   kmer_val_j =  get_DS_kmer_val(kmer_val_j, data->kmer_length);
 		}		
+	
+		if(kmer_val_i > max_kmer) kmer_val_i = max_kmer;
+		if(kmer_val_j > max_kmer) kmer_val_j = max_kmer; 	
 
-		float entropy_i = compute_entropy(kmer_val_i, data->kmer_length);
-                float entropy_j = compute_entropy(kmer_val_j, data->kmer_length);
+		edge.vi = kmer_val_i;
+		edge.vj = kmer_val_j;
 
-		if( (entropy_i > data->min_any_entropy) && (entropy_j > data->min_any_entropy) ) {	
-		  edge.vi = kmer_val_i;
-		  edge.vj = kmer_val_j;
-	   	  kv->add((char *) &edge,sizeof(EDGE),(char *) &edge,sizeof(EDGE));
-		}
+	   	kv->add((char *) &edge,sizeof(EDGE),(char *) &edge,sizeof(EDGE));
 	   }
 	}
 

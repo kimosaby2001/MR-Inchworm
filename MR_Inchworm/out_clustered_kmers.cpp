@@ -1,5 +1,3 @@
-
-
 #include "mpi.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -66,7 +64,7 @@ int main(int narg, char **args)
   data.min_ratio_non_error = 0.05f;
   data.min_kmer_count = 1;
   data.min_edge_count = 1;
-  data.min_any_entropy = 0.4;
+  data.min_any_entropy = 0.0;
   data.kmer_length = 25;
   data.DS = false;
 
@@ -240,36 +238,6 @@ int main(int narg, char **args)
   if(data.me == 0) cerr << "Time took for all possible connections of kmers = " << tstop - tstart << endl << endl;
 
   tstart = MPI_Wtime();
-
-  data.forward_direction = true;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->add(mrKmers);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_count_to_edge, &data);
-
-  data.forward_direction = false;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->add(mrKmers);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_count_to_edge, &data);
-
-  data.forward_direction = true;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
-
-  data.forward_direction = false;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
-
-//  mrE->map(mrE, map_filter_edge_by_count, &data);
-
-  tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for filtering edges = " << tstop - tstart << endl << endl;
-
-
-  tstart = MPI_Wtime();
   mrV->map(mrE,edge_to_vertices,NULL);
   mrV->collate(NULL);
   mrV->reduce(reduce_self_zone,NULL);
@@ -320,23 +288,10 @@ int main(int narg, char **args)
   if(data.me == 0) {
 	cerr << "Total number of kmers with zoneID after clustering = " << flagall << endl;
 	cerr << "Time took for clustering of kmers using connected component finding algorithms = " << tstop - tstart << endl;
-	cerr << "-----------------------------------------------------------" << endl;
   }
 
-  tstart = MPI_Wtime();
-  stringstream out_filename;
-  out_filename << "iworm_" << data.me << ".fa";
-  data.outFile.open(out_filename.str().c_str());
-  
-  data.flag = 0;
-  mrZ->reduce(reduce_run_inchworm, &data);
-  data.outFile.close();
-  tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for parallel iworm contigs construction = " << tstop - tstart << endl;
 
-  flagall = 0;
-  MPI_Allreduce(&data.flag,&flagall,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  if(data.me == 0) cerr << "number of inchworm contigs = " << flagall << endl;
+
 
   MPI_Barrier(MPI_COMM_WORLD);
 

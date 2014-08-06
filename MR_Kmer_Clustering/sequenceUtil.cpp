@@ -33,7 +33,7 @@ bool contains_non_gatc (string kmer) {
 	char c = kmer[i];
 
 	if (_base_to_int[c] > 3)
-	  return(false);
+	  return(true);
 /*
 	if (! (c == 'g' || c == 'G'
                    || c == 'a' || c == 'A'
@@ -45,7 +45,7 @@ bool contains_non_gatc (string kmer) {
 */
   }
 
-  return(true);
+  return(false);
 }
 
 

@@ -66,7 +66,7 @@ int main(int narg, char **args)
   data.min_ratio_non_error = 0.05f;
   data.min_kmer_count = 1;
   data.min_edge_count = 1;
-  data.min_any_entropy = 0.4;
+  data.min_any_entropy = 0.0;
   data.kmer_length = 25;
   data.DS = false;
 
@@ -256,14 +256,14 @@ int main(int narg, char **args)
   data.forward_direction = true;
   mrE->map(mrE, map_kmer_edge, &data);
   mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
+  mrE->reduce(reduce_filter_edge, &data);
 
   data.forward_direction = false;
   mrE->map(mrE, map_kmer_edge, &data);
   mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
+  mrE->reduce(reduce_filter_edge, &data);
 
-//  mrE->map(mrE, map_filter_edge_by_count, &data);
+  mrE->map(mrE, map_filter_edge_by_count, &data);
 
   tstop = MPI_Wtime();
   if(data.me == 0) cerr << "Time took for filtering edges = " << tstop - tstart << endl << endl;

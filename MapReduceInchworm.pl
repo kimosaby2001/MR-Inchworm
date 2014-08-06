@@ -338,6 +338,10 @@ sub run_mrInchworm {
     # MR-Inchworm
     #######################################################
 
+
+    print $MR_PAGE_SIZE, "\n";
+
+
 #    my $cmd_mrInchworm = "mpirun --mca btl self,openib -np $CPU $MR_INCHWORM_DIR/mr_inchworm -K $IWORM_KMER_SIZE -L $MIN_IWORM_LEN";
     my $cmd_mrInchworm = "mpirun --mca orte_base_help_aggregate 0 -np $CPU $MR_INCHWORM_DIR/mr_inchworm -K $IWORM_KMER_SIZE -L $MIN_IWORM_LEN";
     $cmd_mrInchworm .= " --PageSize $MR_PAGE_SIZE";
@@ -358,7 +362,7 @@ sub run_mrInchworm {
         $cmd_mrInchworm .= " $INCHWORM_CUSTOM_PARAMS";
     } 
 
-    $cmd_mrInchworm .= " $sKmerDir"; 
+    $cmd_mrInchworm .= " $sKmerDir/*"; 
 
     &process_cmd($cmd_mrInchworm);
     &process_cmd("$UTILDIR/combine_clustered_iworm.sh iworm $CPU $inchworm_outfile");

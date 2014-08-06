@@ -66,7 +66,7 @@ int main(int narg, char **args)
   data.min_ratio_non_error = 0.05f;
   data.min_kmer_count = 1;
   data.min_edge_count = 1;
-  data.min_any_entropy = 0.4;
+  data.min_any_entropy = 0.0;
   data.kmer_length = 25;
   data.DS = false;
 
@@ -190,10 +190,10 @@ int main(int narg, char **args)
 
   data.nthresh = 1000;
 
-  MapReduce *mrKmers = new MapReduce(MPI_COMM_WORLD);
-  mrKmers->memsize = page_size;
-  mrKmers->verbosity = 1;
-  mrKmers->timer = 1;
+  MapReduce *mrKmer = new MapReduce(MPI_COMM_WORLD);
+  mrKmer->memsize = page_size;
+  mrKmer->verbosity = 1;
+  mrKmer->timer = 1;
 
   MapReduce *mrE = new MapReduce(MPI_COMM_WORLD);
   mrE->memsize = page_size;
@@ -212,62 +212,63 @@ int main(int narg, char **args)
 
   MPI_Barrier(MPI_COMM_WORLD);
 
-  double tstart = MPI_Wtime();  
+  int flagall;
+  double tstart, tstop;
 
-  int nkmers = mrKmers->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq,&data);
-  int nfiles = mrKmers->mapfilecount;
+  tstart = MPI_Wtime();
+  mrKmer->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq,&data);
+  int nfiles = mrKmer->mapfilecount;
+//  if(data.me == 0)
+//        cerr << "# of input files = " << nfiles << endl;
 
-  mrKmers->collate(NULL);
+  mrKmer->collate(NULL);
+  mrKmer->reduce(reduce_kmers_RNAseq,&data);
+  tstop = MPI_Wtime();
 
-  data.flag = 0;
-  mrKmers->reduce(reduce_kmers_RNAseq,&data);
+  if(data.me == 0)
+        cerr << "Time took for loading and counting kmers = " << tstop - tstart << endl << endl;
 
-  double tstop = MPI_Wtime();
-
-  unsigned long long flagall = 0;
-  MPI_Allreduce(&data.flag,&flagall,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
-  if(data.me == 0) cerr <<  "Number of kmers =  " << flagall << " Time took for counting kmers = " << tstop - tstart << endl << endl;
 
   tstart = MPI_Wtime();
 
-  mrE->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq_map_Edge,&data);
-  nfiles = mrE->mapfilecount;
+  //mrE->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq_map_Edge,&data);
+  //mrE->collate(NULL);
+  //mrE->reduce(reduce_Edge_from_RNAseq,&data);
 
+  mrE->map(mrKmer, map_kmers_edge_vertex, &data);
   mrE->collate(NULL);
-  mrE->reduce(reduce_Edge_from_RNAseq,&data);
+  mrE->reduce(reduce_filter_nonExisting_edge,NULL);
 
   tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for all possible connections of kmers = " << tstop - tstart << endl << endl;
+
+  if(data.me == 0) 
+	cerr << "Time took for all possible connections of kmers = " << tstop - tstart << endl << endl;
 
   tstart = MPI_Wtime();
 
+  //mrE->map(mrE, map_filter_edge_by_count, &data);
   data.forward_direction = true;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->add(mrKmers);
+  mrE->map(mrE, map_kmer_edge, &data); 
+  mrE->add(mrKmer);
   mrE->collate(NULL);
-  mrE->reduce(reduce_count_to_edge, &data);
+  mrE->reduce(reduce_filter_edge ,&data);
+
+//  mrE->reduce(reduce_filter_edge_by_count, &data);
+// mrE->reduce(reduce_keep_dominantEdge, &data);
 
   data.forward_direction = false;
   mrE->map(mrE, map_kmer_edge, &data);
-  mrE->add(mrKmers);
+  mrE->add(mrKmer);
   mrE->collate(NULL);
-  mrE->reduce(reduce_count_to_edge, &data);
+  mrE->reduce(reduce_filter_edge, &data);
 
-  data.forward_direction = true;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
-
-  data.forward_direction = false;
-  mrE->map(mrE, map_kmer_edge, &data);
-  mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
-
-//  mrE->map(mrE, map_filter_edge_by_count, &data);
+//  mrE->reduce(reduce_filter_edge_by_count, &data);
+//  mrE->reduce(reduce_keep_dominantEdge, &data);
 
   tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for filtering edges = " << tstop - tstart << endl << endl;
 
+  if(data.me == 0) 
+        cerr << "Time took for filtering edges = " << tstop - tstart << endl << endl;
 
   tstart = MPI_Wtime();
   mrV->map(mrE,edge_to_vertices,NULL);
@@ -286,10 +287,11 @@ int main(int narg, char **args)
     mrZ->reduce(reduce_edge_zone,NULL);
 
     mrZ->collate(NULL);
+
     data.flag = 0;
     mrZ->reduce(reduce_zone_winner,&data);
-    flagall = 0;
-    MPI_Allreduce(&data.flag,&flagall,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
+    flagall;
+    MPI_Allreduce(&data.flag,&flagall,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
 
     if (flagall == 0) break;
 
@@ -303,24 +305,27 @@ int main(int narg, char **args)
 
   } 
 
+
   mrZ->map(mrV,map_strip,NULL);
 
-  mrZ->add(mrKmers);
+  mrZ->add(mrKmer);
   mrZ->collate(NULL);
-
+ 
   data.flag = 0;
   mrZ->reduce(reduce_zone_kmer_count,&data);
 
-  flagall = 0;
-  MPI_Allreduce(&data.flag,&flagall,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
+  unsigned long long flagall_ull = 0;
+  MPI_Allreduce(&data.flag,&flagall_ull,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
 
-  mrZ->collate(NULL);
+  //mrZ->collate(NULL);
+  mrZ->aggregate(NULL);
+  mrZ->convert();
 
   tstop = MPI_Wtime();
+
   if(data.me == 0) {
-	cerr << "Total number of kmers with zoneID after clustering = " << flagall << endl;
-	cerr << "Time took for clustering of kmers using connected component finding algorithms = " << tstop - tstart << endl;
-	cerr << "-----------------------------------------------------------" << endl;
+	cerr << "Total number of kmers with zoneID after clustering = " << flagall_ull << endl;
+	cerr << "Time took for clustering of kmers using connected component finding algorithms = " << tstop - tstart << endl << endl;
   }
 
   tstart = MPI_Wtime();
@@ -332,15 +337,16 @@ int main(int narg, char **args)
   mrZ->reduce(reduce_run_inchworm, &data);
   data.outFile.close();
   tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for parallel iworm contigs construction = " << tstop - tstart << endl;
 
-  flagall = 0;
-  MPI_Allreduce(&data.flag,&flagall,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  if(data.me == 0) cerr << "number of inchworm contigs = " << flagall << endl;
+  if(data.me == 0) cerr << "Time took for parallel iworm contigs construction = " << tstop - tstart << endl << endl;
+
+  flagall_ull = 0;
+  MPI_Allreduce(&data.flag,&flagall_ull,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  if(data.me == 0) cerr << "number of inchworm contigs = " << flagall_ull << endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
 
-  delete mrKmers;
+  delete mrKmer;
   delete mrE;
   delete mrV;
   delete mrZ;
