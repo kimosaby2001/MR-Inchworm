@@ -24,6 +24,7 @@
 #include "math.h"
 
 #include "mrSubroutine.h"
+#include "profiling.h"
 
 #include "Fasta_reader.hpp"
 #include "sequenceUtil.hpp"
@@ -168,7 +169,7 @@ int main(int narg, char **args)
        if(in_args.isArgSet("--PageSize")) {
             page_size = in_args.getIntVal("--PageSize");
             num_args += 2;
-            if(data.me==0) cerr << "Page size for map reduce object set to: " << page_size << endl;
+            if(data.me==0) cerr << "Page size for map reduce object set to: " << page_size << endl << endl;
        }
  
   }
@@ -193,34 +194,48 @@ int main(int narg, char **args)
   MapReduce *mrKmers = new MapReduce(MPI_COMM_WORLD);
   mrKmers->memsize = page_size;
   mrKmers->verbosity = 1;
-  mrKmers->timer = 1;
+  mrKmers->timer = 0;
 
   MapReduce *mrE = new MapReduce(MPI_COMM_WORLD);
   mrE->memsize = page_size;
   mrE->verbosity = 1;
-  mrE->timer = 1;
+  mrE->timer = 0;
 
   MapReduce *mrV = new MapReduce(MPI_COMM_WORLD);
   mrV->memsize = page_size;
   mrV->verbosity = 1;
-  mrV->timer = 1; 
+  mrV->timer = 0; 
 
   MapReduce *mrZ = new MapReduce(MPI_COMM_WORLD);
   mrZ->memsize = page_size;
   mrZ->verbosity = 1;
-  mrZ->timer = 1;
+  mrZ->timer = 0;
+
+// ###########################################################
+
+  int VmSm = 1;
+  int iter = 0;
 
   MPI_Barrier(MPI_COMM_WORLD);
 
   double tstart = MPI_Wtime();  
 
   int nkmers = mrKmers->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq,&data);
-  int nfiles = mrKmers->mapfilecount;
 
+  iter++;
+  getMemory(iter, data.me, data.nprocs, VmSm); 
+
+  int nfiles = mrKmers->mapfilecount;
   mrKmers->collate(NULL);
+
+  iter++;
+  getMemory(iter, data.me, data.nprocs, VmSm);
 
   data.flag = 0;
   mrKmers->reduce(reduce_kmers_RNAseq,&data);
+
+  iter++;
+  getMemory(iter, data.me, data.nprocs, VmSm);
 
   double tstop = MPI_Wtime();
 
@@ -233,11 +248,25 @@ int main(int narg, char **args)
   mrE->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq_map_Edge,&data);
   nfiles = mrE->mapfilecount;
 
+  iter++;
+  getMemory(iter, data.me, data.nprocs, VmSm);
+
   mrE->collate(NULL);
+
+  iter++;
+  getMemory(iter, data.me, data.nprocs, VmSm);
+
+  data.flag = 0;
   mrE->reduce(reduce_Edge_from_RNAseq,&data);
 
+  iter++;
+  getMemory(iter, data.me, data.nprocs, VmSm);
+
+  flagall = 0;
+  MPI_Allreduce(&data.flag,&flagall,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
+
   tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for all possible connections of kmers = " << tstop - tstart << endl << endl;
+  if(data.me == 0) cerr << "number of edges = " << flagall << " Time took for all possible connections of kmers = " << tstop - tstart << endl << endl;
 
   tstart = MPI_Wtime();
 
@@ -256,24 +285,22 @@ int main(int narg, char **args)
   data.forward_direction = true;
   mrE->map(mrE, map_kmer_edge, &data);
   mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
+  mrE->reduce(reduce_keep_dominantEdge, NULL);
 
   data.forward_direction = false;
   mrE->map(mrE, map_kmer_edge, &data);
   mrE->collate(NULL);
-  mrE->reduce(reduce_keep_dominantEdge, &data);
+  mrE->reduce(reduce_keep_dominantEdge, NULL);
 
-//  mrE->map(mrE, map_filter_edge_by_count, &data);
 
   tstop = MPI_Wtime();
   if(data.me == 0) cerr << "Time took for filtering edges = " << tstop - tstart << endl << endl;
-
 
   tstart = MPI_Wtime();
   mrV->map(mrE,edge_to_vertices,NULL);
   mrV->collate(NULL);
   mrV->reduce(reduce_self_zone,NULL);
-  
+ 
   int niterates = 0;
 
   while(1) {
@@ -288,26 +315,25 @@ int main(int narg, char **args)
     mrZ->collate(NULL);
     data.flag = 0;
     mrZ->reduce(reduce_zone_winner,&data);
+
     flagall = 0;
     MPI_Allreduce(&data.flag,&flagall,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
-
     if (flagall == 0) break;
 
     mrV->map(mrV, map_invert_multi, &data);
     mrV->map(mrZ, map_zone_multi, &data, 1);
+
     mrV->collate(NULL);
     mrV->reduce(reduce_zone_reassign,&data);
 
-   if(data.me == 0) 
-	cerr <<  niterates << " th iteration swithed the number of " << flagall << " zones" <<endl << endl;
+   if(data.me == 0) cerr <<  niterates << " th iteration swithed the number of " << flagall << " zones" <<endl << endl;
 
   } 
 
   mrZ->map(mrV,map_strip,NULL);
-
   mrZ->add(mrKmers);
-  mrZ->collate(NULL);
 
+  mrZ->collate(NULL);
   data.flag = 0;
   mrZ->reduce(reduce_zone_kmer_count,&data);
 

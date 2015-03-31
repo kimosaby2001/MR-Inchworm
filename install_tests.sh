@@ -26,3 +26,10 @@ else
 	echo "fastool Installation appears to have FAILED"
 fi
 
+if [ -e "Collectl/bin/collectl" ]
+then
+        echo "collectl:         has been Installed Properly"
+else
+        echo "collectl Installation appears to have FAILED"
+fi
+

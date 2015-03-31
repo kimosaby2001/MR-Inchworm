@@ -14,6 +14,8 @@ use Getopt::Long qw(:config no_ignore_case pass_through);
 
 open (STDERR, ">&STDOUT"); 
 
+my $VERSION = "MR_Inchworm_r2015";
+
 my $CPU = 1;
 my $MR_PAGE_SIZE = 1024;
 
@@ -65,6 +67,15 @@ my $pm_trinity_arguments="";
 my $pm_inchworm_kmers=0;
 my $pm_read_count=0;
 
+my $run_with_collectl = 0;
+# flush each second, record procs+rest every 5 secs, use only process subsystem
+#my $collectl_param = "-F1 -i5:5 -sZ";
+my $collectl_param = "-F1 -i5:5 -scfnmZ";
+my $collectl_output_directory = "collectl";
+my $collectl_pid = 0;
+my $collectl_out = "";
+my $collectl_titlename = "";
+my $start_dir = cwd();
 
 my $usage = <<_EOUSAGE_;
 
@@ -89,40 +100,44 @@ my $MR_INCHWORM_DIR    = "$ROOTDIR/MR_Inchworm";
 my $FASTA_SPLITTER_DIR = "$ROOTDIR/Fasta_Splitter";
 my $FASTOOL_DIR        = "$ROOTDIR/fastool";
 my $UTILDIR            = "$ROOTDIR/util"; 
+my $COLLECTL_DIR       = "$ROOTDIR/Collectl/bin";
 
 unless (@ARGV) {
     die "$usage\n";
 }
 
-
+my $FULL_CLEANUP = 0;
 my $NO_FASTOOL = 0;
 
 &GetOptions( 
 
-    "seqType=s" => \$seqType,
-    "left=s{,}" => \@left_files,
-    "right=s{,}" => \@right_files,
-    "single=s{,}" => \@single_files,
+    "seqType=s" 	=> \$seqType,
+    "left=s{,}" 	=> \@left_files,
+    "right=s{,}" 	=> \@right_files,
+    "single=s{,}" 	=> \@single_files,
     
-    "SS_lib_type=s" => \$SS_lib_type,
+    "SS_lib_type=s" 	=> \$SS_lib_type,
 
-    "long_reads=s" => \$long_reads,
+    "long_reads=s" 	=> \$long_reads,
 
-    "output=s" => \$output_directory,
+    "output=s" 		=> \$output_directory,
     
     "min_contig_length=i" => \$min_contig_length,
 
-    'CPU=i' => \$CPU,
+    'CPU=i' 		=> \$CPU,
 
     'min_kmer_cov=i'        => \$min_kmer_cov,
     'min_edge_cov=i'        => \$min_edge_cov,
     'INCHWORM_CUSTOM_PARAMS=s' => \$INCHWORM_CUSTOM_PARAMS,
 
-    'no_fastool' => \$NO_FASTOOL,
+    'no_fastool' 	=> \$NO_FASTOOL,
 
-    'KMER_SIZE=i' => \$IWORM_KMER_SIZE,
+    'KMER_SIZE=i' 	=> \$IWORM_KMER_SIZE,
 
-    'page_size=i' => \$MR_PAGE_SIZE,
+    'page_size=i' 	=> \$MR_PAGE_SIZE,
+
+    'monitoring' 	=> \$run_with_collectl,
+    'collectl_dir=s' 	=> \$collectl_output_directory,
 
 );
 
@@ -139,6 +154,12 @@ sub check_option {
 }
 
 check_option( \$seqType,     'seqType'     );
+
+if ($run_with_collectl && $^O !~ /linux/i) {
+    print STDERR "WARNING, --monitoring can only be used on linux. Turning it off.\n\n";
+    $run_with_collectl = 0;
+}
+
 
 if ($SS_lib_type) {
     unless ($SS_lib_type =~ /^(R|F|RF|FR)$/) {
@@ -164,10 +185,57 @@ unless ($curr_limit_settings && $curr_limit_settings =~ /\w/) {
 print "Current settings:\n$curr_limit_settings\n\n";
 
 
+sub collectl_start {
+    # install signal handler to stop collectl on interrupt
+    $SIG{INT} = sub { print "Trinity interrupted\n"; &collectl_stop(); exit(1); };
 
-my $MKDIR_OUTDIR_FLAG = 0;
+    if ($run_with_collectl){
+        warn "STARTING COLLECTL\n";
+        $collectl_output_directory = "$start_dir/collectl";
+        `rm -rf $collectl_output_directory `;
+        $collectl_output_directory = &create_full_path($collectl_output_directory);
+        unless (-d $collectl_output_directory) {
+            mkdir $collectl_output_directory or die "Error, cannot mkdir $collectl_output_directory";
+        }
+        my $collectl_userid = qx(id --user --real);
+        chomp($collectl_userid);
+        my $cmd = "cd $collectl_output_directory && exec ${COLLECTL_DIR}/collectl $collectl_param --procfilt u$collectl_userid -f $collectl_output_directory/y";
+        ## fork a child to run collectl
+        $collectl_pid = fork();
+        if (not defined $collectl_pid) {
+            warn "FORK FAILED - NO COLLECTL PROCESS STARTED\n";
+        } elsif ($collectl_pid == 0) {
+            warn "I'M THE CHILD RUNNING TRINITY\n";
+            exec($cmd);
+            warn "COLLECTL FINISHED BEVORE KILL WAS CALLED\n";
+            exit(0);
+        } else {
+        warn "I'M THE PARENT, COLLECTL_PID=$collectl_pid\n";
+        }
+    }
+}
+
+sub collectl_stop {
+    if ($run_with_collectl && $collectl_pid>0) {
+        warn "TERMINATING COLLECTL, PID = $collectl_pid\n";
+        # try to be nice here as a hard kill will result in broken/unusable raw.gz file
+        system("sync");
+        kill("INT", $collectl_pid);
+        kill("TERM", $collectl_pid);
+        waitpid($collectl_pid,0);
+        chdir($collectl_output_directory) or return;
+        system("$COLLECTL_DIR/make_data_files.sh");
+        system("$COLLECTL_DIR/timetable.sh");
+        $collectl_titlename = "${VERSION} ${CPU} @{left_files}@{single_files}";
+        system("$COLLECTL_DIR/plot.sh \"$collectl_titlename\" ${CPU}");
+    }
+}
+
+
 ##################################################################################
 #
+
+my $MKDIR_OUTDIR_FLAG = 0;
 
 main: {
 
@@ -276,6 +344,8 @@ main: {
         close $ofh;
     }
 
+    collectl_start() unless ($FULL_CLEANUP);
+
     ##############################################
     # MR-Inchworm
     #
@@ -289,8 +359,6 @@ main: {
 
     my $pm_mrInchworm_time = $pm_mrInchworm_end - $pm_mrInchworm_start;
     print "\n  mrInchworm took  $pm_mrInchworm_time seconds\n";
-
-   		
 
 exit(0);
 
@@ -395,17 +463,17 @@ sub create_full_path {
 sub process_cmd {
     my ($cmd) = @_;
 
-    print "CMD: $cmd\n";
+#    print "CMD: $cmd\n";
 
-    my $start_time = time();
+#    my $start_time = time();
     my $ret = system($cmd);
-    my $end_time = time();
+#    my $end_time = time();
 
     if ($ret) {
         die "Error, cmd: $cmd died with ret $ret";
     }
     
-    print "CMD finished (" . ($end_time - $start_time) . " seconds)\n";    
+#    print "CMD finished (" . ($end_time - $start_time) . " seconds)\n";    
 
     return;
 }
@@ -479,6 +547,6 @@ sub prep_seqs {
   return \@initial_files;
 }
 
-
-
-
+END {
+    &collectl_stop();
+}

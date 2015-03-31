@@ -81,7 +81,7 @@ int main (int argc, char* argv[]) {
 
    cmdstr.str("");
    cmdstr << "wc -l " << headerFile;
-   cerr << cmdstr.str() << endl;
+//   cerr << cmdstr.str() << endl;
    string CMD_out = exec(cmdstr.str().c_str());
  
    cmd_out.str(""); 
@@ -140,7 +140,7 @@ int main (int argc, char* argv[]) {
 
    cmdstr.str("");
    cmdstr << "sed '" << startLine << "," << endLine << "p;d' " << readFile << " > " << sKmerDir << "/sKmer_" << rank << ".fa";
-   cerr << cmdstr.str() << endl;
+//   cerr << cmdstr.str() << endl;
    Execute_command(cmdstr.str().c_str()); 
    
    MPI_Barrier(MPI_COMM_WORLD);

@@ -6,6 +6,7 @@
 
 #include "typedefs.h"
 #include "mrSubroutine.h"
+#include "profiling.h"
 
 using namespace MAPREDUCE_NS;
 using namespace std;
@@ -94,6 +95,7 @@ void reduce_run_inchworm(char *key, int keybytes,
         kmer_count = *(KmerCount *) value;
         irke.add_kmer(kmer_count.kmer, kmer_count.count);
         value += valuebytes[i];
+
     }
 
     END_BLOCK_LOOP
@@ -105,12 +107,13 @@ void reduce_run_inchworm(char *key, int keybytes,
     if (data->min_kmer_count > 1 || data->min_any_entropy > 0 || data->prune_error_kmers)
       irke.prune_some_kmers(data->min_kmer_count, data->min_any_entropy, data->prune_error_kmers, data->min_ratio_non_error);
 
-    irke.populate_sorted_kmers_list();
+      irke.populate_sorted_kmers_list();
 
-    data->flag += irke.compute_sequence_assemblies( (unsigned long long) zone, data->outFile, 
-						    data->MIN_CONNECTIVITY_RATIO, data->MIN_ASSEMBLY_LENGTH,
-                                               	    data->MIN_ASSEMBLY_COVERAGE, data->WRITE_COVERAGE, 
+     data->flag += irke.compute_sequence_assemblies( (unsigned long long) zone, data->outFile, 
+  						    data->MIN_CONNECTIVITY_RATIO, data->MIN_ASSEMBLY_LENGTH,
+                                             	    data->MIN_ASSEMBLY_COVERAGE, data->WRITE_COVERAGE, 
 						    data->COVERAGE_OUTPUT_FILENAME );
+
   }
 
  }
@@ -203,7 +206,6 @@ void reduce_zone_reassign(char *key, int keybytes,
   char *value;
   uint64_t znew;
 
-
   uint64_t zcount = 0;
   uint64_t zone = *(uint64_t *) key;
   int hkey = zone >> 63;
@@ -256,11 +258,9 @@ void reduce_zone_winner(char *key, int keybytes,
   uint64_t z0 = z[0] & INT64MAX;
   uint64_t z1 = z[1] & INT64MAX;
 
-
   if (z0 == z1) return;
 
   Data *data = (Data *) ptr;
-
   data->flag++;
 
   PAD *pad = &(data->pad);
@@ -272,6 +272,7 @@ void reduce_zone_winner(char *key, int keybytes,
     pad->zone = z[0];
     kv->add((char *) &z[1],sizeof(uint64_t),(char *) pad,sizeof(PAD));
   }
+
 }
 
 
@@ -425,8 +426,8 @@ void map_kmer_edge (uint64_t itask, char *key, int keybytes,
                     char *value, int valuebytes,
                     KeyValue *kv, void *ptr)
 {
-   kmer_int_type_t kmer;
    Data *data = (Data *) ptr;
+   kmer_int_type_t kmer;
    EDGE edge = *(EDGE *) key;
 
    if(data->forward_direction) kmer = edge.vi;
@@ -472,7 +473,6 @@ void reduce_keep_dominantEdge(char *key, int keybytes,
                                  int *valuebytes, KeyValue *kv, void *ptr)
 {
    char *value;
-   Data *data = (Data *) ptr;
    EDGE edge;
    int i;
 
@@ -495,8 +495,9 @@ void reduce_keep_dominantEdge(char *key, int keybytes,
     value = multivalue;
     for (i = 0; i < nvalues; i++) {
         edge = *(EDGE *) value;
-	if(edge.ce == dominant_count) 
+	if(edge.ce == dominant_count) {
 	   kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+	}
 	value += valuebytes[i];
     }
 
@@ -720,9 +721,7 @@ void fileread(int itask, char *fname, KeyValue *kv, void *ptr)
 
 void fileread_RNAseq(int itask, char *fname, KeyValue *kv, void *ptr)
 {
-
   Data *data = (Data *) ptr;
-
   struct stat stbuf;
   int flag = stat(fname,&stbuf);
   if (flag < 0) {
@@ -748,8 +747,11 @@ void fileread_RNAseq(int itask, char *fname, KeyValue *kv, void *ptr)
               if(data->DS) kmer_val = get_DS_kmer_val(kmer_val, data->kmer_length);
 
 	      float entropy = compute_entropy(kmer_val, data->kmer_length);
-              if( entropy > data->min_any_entropy )
+              if( entropy > data->min_any_entropy ) {
+		// int dummy = 0;
+                // kv->add((char *) &kmer_val,sizeof(kmer_int_type_t),(char *) &dummy,sizeof(int));
                  kv->add((char *) &kmer_val,sizeof(kmer_int_type_t),(char *) &kmer_val,sizeof(kmer_int_type_t));
+	      }
            }
 
         }
@@ -806,7 +808,10 @@ void fileread_RNAseq_map_Edge(int itask, char *fname, KeyValue *kv, void *ptr)
 		if( (entropy_i > data->min_any_entropy) && (entropy_j > data->min_any_entropy) ) {	
 		  edge.vi = kmer_val_i;
 		  edge.vj = kmer_val_j;
-	   	  kv->add((char *) &edge,sizeof(EDGE),(char *) &edge,sizeof(EDGE));
+		  //int dummy = 0;
+	   	  //kv->add((char *) &edge,sizeof(EDGE),(char *) &dummy,sizeof(int));
+
+		 kv->add((char *) &edge,sizeof(EDGE),(char *) &edge,sizeof(EDGE));
 		}
 	   }
 	}
@@ -835,12 +840,10 @@ void reduce_kmers_RNAseq(char *key, int keybytes,
                         char *multivalue, int nvalues,
                         int *valuebytes, KeyValue *kv, void *ptr)
 {
-  Data *data = (Data *) ptr;
-  if(nvalues>0) {
+    Data *data = (Data *) ptr;
     unsigned int count = (unsigned int)nvalues;
     kv->add(key, keybytes, (char *) &count, sizeof(unsigned int));
     data->flag++;
-  }
 }
 
 // #########################################################################
@@ -850,9 +853,9 @@ void reduce_Edge_from_RNAseq(char *key, int keybytes,
                             int *valuebytes, KeyValue *kv, void *ptr)
 {
   Data *data = (Data *) ptr;
-
   EDGE edge = *(EDGE *) key;
   edge.ce = (unsigned int)nvalues;
   kv->add((char *) &edge, sizeof(EDGE), NULL, NULL);
+  data->flag++;
 }
 

@@ -29,7 +29,6 @@ typedef struct {
   } PAD;
 
 struct Data {
-        int n;
 	uint64_t flag;
         unsigned int kmer_length;
         ofstream outFile;
