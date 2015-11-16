@@ -1,4 +1,4 @@
-MR-Inchworm
+MapReduce-Inchworm
 ===========
 
 Contact: Chang Sik Kim (kim.chang.sik@gmail.com or chang.kim@cruk.manchester.ac.uk)
