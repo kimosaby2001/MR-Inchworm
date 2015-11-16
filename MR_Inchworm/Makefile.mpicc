@@ -1,7 +1,7 @@
 # MPI-based makefile using mpic++ and mpicc
 
-INC_DIR =	/home/ckim/LIBs/mrmpi-7Apr14/src 
-MR_LIB =	/home/ckim/LIBs/mrmpi-7Apr14/src/libmrmpi_mpicc.a
+INC_DIR =	"Place the directory for header files of MapReduce-MPI C++ library" 
+MR_LIB =	"Place the filename including the located directory for youor compiled MapReduce-MPI C++ library"	
 CC =		mpicc 
 CPP =		mpic++ 
 CCFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated -I$(INC_DIR) 
