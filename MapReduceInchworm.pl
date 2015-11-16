@@ -67,14 +67,6 @@ my $pm_trinity_arguments="";
 my $pm_inchworm_kmers=0;
 my $pm_read_count=0;
 
-my $run_with_collectl = 0;
-# flush each second, record procs+rest every 5 secs, use only process subsystem
-#my $collectl_param = "-F1 -i5:5 -sZ";
-my $collectl_param = "-F1 -i5:5 -scfnmZ";
-my $collectl_output_directory = "collectl";
-my $collectl_pid = 0;
-my $collectl_out = "";
-my $collectl_titlename = "";
 my $start_dir = cwd();
 
 my $usage = <<_EOUSAGE_;
@@ -136,9 +128,6 @@ my $NO_FASTOOL = 0;
 
     'page_size=i' 	=> \$MR_PAGE_SIZE,
 
-    'monitoring' 	=> \$run_with_collectl,
-    'collectl_dir=s' 	=> \$collectl_output_directory,
-
 );
 
 
@@ -154,12 +143,6 @@ sub check_option {
 }
 
 check_option( \$seqType,     'seqType'     );
-
-if ($run_with_collectl && $^O !~ /linux/i) {
-    print STDERR "WARNING, --monitoring can only be used on linux. Turning it off.\n\n";
-    $run_with_collectl = 0;
-}
-
 
 if ($SS_lib_type) {
     unless ($SS_lib_type =~ /^(R|F|RF|FR)$/) {
@@ -183,53 +166,6 @@ unless ($curr_limit_settings && $curr_limit_settings =~ /\w/) {
 }
 
 print "Current settings:\n$curr_limit_settings\n\n";
-
-
-sub collectl_start {
-    # install signal handler to stop collectl on interrupt
-    $SIG{INT} = sub { print "Trinity interrupted\n"; &collectl_stop(); exit(1); };
-
-    if ($run_with_collectl){
-        warn "STARTING COLLECTL\n";
-        $collectl_output_directory = "$start_dir/collectl";
-        `rm -rf $collectl_output_directory `;
-        $collectl_output_directory = &create_full_path($collectl_output_directory);
-        unless (-d $collectl_output_directory) {
-            mkdir $collectl_output_directory or die "Error, cannot mkdir $collectl_output_directory";
-        }
-        my $collectl_userid = qx(id --user --real);
-        chomp($collectl_userid);
-        my $cmd = "cd $collectl_output_directory && exec ${COLLECTL_DIR}/collectl $collectl_param --procfilt u$collectl_userid -f $collectl_output_directory/y";
-        ## fork a child to run collectl
-        $collectl_pid = fork();
-        if (not defined $collectl_pid) {
-            warn "FORK FAILED - NO COLLECTL PROCESS STARTED\n";
-        } elsif ($collectl_pid == 0) {
-            warn "I'M THE CHILD RUNNING TRINITY\n";
-            exec($cmd);
-            warn "COLLECTL FINISHED BEVORE KILL WAS CALLED\n";
-            exit(0);
-        } else {
-        warn "I'M THE PARENT, COLLECTL_PID=$collectl_pid\n";
-        }
-    }
-}
-
-sub collectl_stop {
-    if ($run_with_collectl && $collectl_pid>0) {
-        warn "TERMINATING COLLECTL, PID = $collectl_pid\n";
-        # try to be nice here as a hard kill will result in broken/unusable raw.gz file
-        system("sync");
-        kill("INT", $collectl_pid);
-        kill("TERM", $collectl_pid);
-        waitpid($collectl_pid,0);
-        chdir($collectl_output_directory) or return;
-        system("$COLLECTL_DIR/make_data_files.sh");
-        system("$COLLECTL_DIR/timetable.sh");
-        $collectl_titlename = "${VERSION} ${CPU} @{left_files}@{single_files}";
-        system("$COLLECTL_DIR/plot.sh \"$collectl_titlename\" ${CPU}");
-    }
-}
 
 
 ##################################################################################
@@ -283,7 +219,7 @@ main: {
                 if ($SS_lib_type) {
                     ($left_SS_type, $right_SS_type) = split(//, $SS_lib_type);
                 }
-                print("Converting input files. (in parallel)");
+                print("Converting input files. (in parallel) /n");
                 my $thr1;
                 my $thr2;
                 if (!(-s "left.fa")) {
@@ -298,7 +234,7 @@ main: {
                 }
                 @left_files = @{$thr1->join()};
                 @right_files =@{$thr2->join()};
-                print("Done converting input files.");
+                print("Done converting input files. /n");
 		## Calculate input file sizes for performance monitoring
 		## this should be set as the created fasta otherwise results will differ for same data passed as .fq and .fa?
 		my $pm_temp = -s "left.fa";
@@ -343,8 +279,6 @@ main: {
         print $ofh $count_of_reads."\n";
         close $ofh;
     }
-
-    collectl_start() unless ($FULL_CLEANUP);
 
     ##############################################
     # MR-Inchworm
@@ -410,7 +344,6 @@ sub run_mrInchworm {
     print $MR_PAGE_SIZE, "\n";
 
 
-#    my $cmd_mrInchworm = "mpirun --mca btl self,openib -np $CPU $MR_INCHWORM_DIR/mr_inchworm -K $IWORM_KMER_SIZE -L $MIN_IWORM_LEN";
     my $cmd_mrInchworm = "mpirun --mca orte_base_help_aggregate 0 -np $CPU $MR_INCHWORM_DIR/mr_inchworm -K $IWORM_KMER_SIZE -L $MIN_IWORM_LEN";
     $cmd_mrInchworm .= " --PageSize $MR_PAGE_SIZE";
 
@@ -463,18 +396,17 @@ sub create_full_path {
 sub process_cmd {
     my ($cmd) = @_;
 
-#    print "CMD: $cmd\n";
+    print "CMD: $cmd\n";
 
-#    my $start_time = time();
+    my $start_time = time();
     my $ret = system($cmd);
-#    my $end_time = time();
+    my $end_time = time();
 
     if ($ret) {
         die "Error, cmd: $cmd died with ret $ret";
     }
     
-#    print "CMD finished (" . ($end_time - $start_time) . " seconds)\n";    
-
+    print "CMD finished (" . ($end_time - $start_time) . " seconds)\n";    
     return;
 }
 
@@ -547,6 +479,6 @@ sub prep_seqs {
   return \@initial_files;
 }
 
-END {
-    &collectl_stop();
-}
+#END {
+#    &collectl_stop();
+#}

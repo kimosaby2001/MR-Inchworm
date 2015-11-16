@@ -136,11 +136,8 @@ int main (int argc, char* argv[]) {
         endLine = strtoull(dummy_end.c_str(), NULL, 10);
   }
 
-//   cerr << "Rank: " << rank << "---" << startLine << " -- " << endLine << endl;
-
    cmdstr.str("");
    cmdstr << "sed '" << startLine << "," << endLine << "p;d' " << readFile << " > " << sKmerDir << "/sKmer_" << rank << ".fa";
-//   cerr << cmdstr.str() << endl;
    Execute_command(cmdstr.str().c_str()); 
    
    MPI_Barrier(MPI_COMM_WORLD);

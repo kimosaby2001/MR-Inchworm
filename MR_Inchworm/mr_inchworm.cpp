@@ -194,27 +194,24 @@ int main(int narg, char **args)
   MapReduce *mrKmers = new MapReduce(MPI_COMM_WORLD);
   mrKmers->memsize = page_size;
   mrKmers->verbosity = 1;
-  mrKmers->timer = 0;
+  mrKmers->timer = 1;
 
   MapReduce *mrE = new MapReduce(MPI_COMM_WORLD);
   mrE->memsize = page_size;
   mrE->verbosity = 1;
-  mrE->timer = 0;
+  mrE->timer = 1;
 
   MapReduce *mrV = new MapReduce(MPI_COMM_WORLD);
   mrV->memsize = page_size;
   mrV->verbosity = 1;
-  mrV->timer = 0; 
+  mrV->timer = 1; 
 
   MapReduce *mrZ = new MapReduce(MPI_COMM_WORLD);
   mrZ->memsize = page_size;
   mrZ->verbosity = 1;
-  mrZ->timer = 0;
+  mrZ->timer = 1;
 
 // ###########################################################
-
-  int VmSm = 1;
-  int iter = 0;
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -222,20 +219,11 @@ int main(int narg, char **args)
 
   int nkmers = mrKmers->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq,&data);
 
-  iter++;
-  getMemory(iter, data.me, data.nprocs, VmSm); 
-
   int nfiles = mrKmers->mapfilecount;
   mrKmers->collate(NULL);
 
-  iter++;
-  getMemory(iter, data.me, data.nprocs, VmSm);
-
   data.flag = 0;
   mrKmers->reduce(reduce_kmers_RNAseq,&data);
-
-  iter++;
-  getMemory(iter, data.me, data.nprocs, VmSm);
 
   double tstop = MPI_Wtime();
 
@@ -248,19 +236,10 @@ int main(int narg, char **args)
   mrE->map(narg-num_args,&args[num_args],0,1,0,fileread_RNAseq_map_Edge,&data);
   nfiles = mrE->mapfilecount;
 
-  iter++;
-  getMemory(iter, data.me, data.nprocs, VmSm);
-
   mrE->collate(NULL);
-
-  iter++;
-  getMemory(iter, data.me, data.nprocs, VmSm);
 
   data.flag = 0;
   mrE->reduce(reduce_Edge_from_RNAseq,&data);
-
-  iter++;
-  getMemory(iter, data.me, data.nprocs, VmSm);
 
   flagall = 0;
   MPI_Allreduce(&data.flag,&flagall,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,MPI_COMM_WORLD);
@@ -326,7 +305,7 @@ int main(int narg, char **args)
     mrV->collate(NULL);
     mrV->reduce(reduce_zone_reassign,&data);
 
-   if(data.me == 0) cerr <<  niterates << " th iteration swithed the number of " << flagall << " zones" <<endl << endl;
+   if(data.me == 0) cerr <<  niterates << " th iteration swithed the number of " << flagall << " zones" << endl << endl;
 
   } 
 
@@ -344,7 +323,7 @@ int main(int narg, char **args)
 
   tstop = MPI_Wtime();
   if(data.me == 0) {
-	cerr << "Total number of kmers with zoneID after clustering = " << flagall << endl;
+	cerr << endl << endl << "Total number of kmers with zoneID after clustering = " << flagall << endl;
 	cerr << "Time took for clustering of kmers using connected component finding algorithms = " << tstop - tstart << endl;
 	cerr << "-----------------------------------------------------------" << endl;
   }
@@ -358,11 +337,11 @@ int main(int narg, char **args)
   mrZ->reduce(reduce_run_inchworm, &data);
   data.outFile.close();
   tstop = MPI_Wtime();
-  if(data.me == 0) cerr << "Time took for parallel iworm contigs construction = " << tstop - tstart << endl;
+  if(data.me == 0) cerr << endl << "Time took for parallel iworm contigs construction = " << tstop - tstart << endl;
 
   flagall = 0;
   MPI_Allreduce(&data.flag,&flagall,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  if(data.me == 0) cerr << "number of inchworm contigs = " << flagall << endl;
+  if(data.me == 0) cerr << endl << "number of inchworm contigs = " << flagall << endl;
 
   MPI_Barrier(MPI_COMM_WORLD);
 
