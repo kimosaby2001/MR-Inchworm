@@ -1685,7 +1685,7 @@ MDLLEXPORT bool AddUTF8Sig(CMString & string)
   if (IsUTF8(string))
 	return false;
 
-  const char * p = (const char*)string;
+//  const char * p = (const char*)string;
 
   CMString tmp = GetUTF8Sig();
   tmp += string;

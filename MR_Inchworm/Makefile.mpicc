@@ -1,11 +1,13 @@
 # MPI-based makefile using mpic++ and mpicc
 
+INC_DIR =	/home/ckim/LIBs/mrmpi-7Apr14/src 
+MR_LIB =	/home/ckim/LIBs/mrmpi-7Apr14/src/libmrmpi_mpicc.a
 CC =		mpicc 
 CPP =		mpic++ 
-CCFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated -I/gpfs/stfc/local/HCP006/mdw02/cxk42-mdw02/LIBs/mrmpi-22Nov13/src 
+CCFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated -I$(INC_DIR) 
 LINK =		mpic++
 LINKFLAGS =	-m64 -g -O3 -Wno-long-long -Wno-deprecated  
-USRLIB =	/gpfs/stfc/local/HCP006/mdw02/cxk42-mdw02/LIBs/mrmpi-22Nov13/src/libmrmpi_mpicc.a
+USRLIB =	$(MR_LIB)	
 SYSLIB =
 
 include Makefile.common
