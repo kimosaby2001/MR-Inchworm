@@ -7,4 +7,4 @@
          
          Martyn Winn (martyn.winn@stfc.ac.uk)
 
-For information about the installation and usage, please go to wiki page: <https://github.com/kimosaby2001/MR-Inchworm/wiki>.
+For information about the installation and usage, please go to [wiki page] <https://github.com/kimosaby2001/MR-Inchworm/wiki>.
